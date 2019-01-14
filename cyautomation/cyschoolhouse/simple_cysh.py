@@ -93,11 +93,14 @@ def get_section_df(sections_of_interest):
     return df
 
 def get_student_section_staff_df(sections_of_interest):
-    if type(sections_of_interest)==str:
+    if type(sections_of_interest) == str:
         sections_of_interest = [sections_of_interest]
 
     # load salesforce tables
-    program_df = get_object_df('Program__c', ['Id', 'Name'], where=f"Name IN ({str(sections_of_interest)[1:-1]})", rename_id=True, rename_name=True)
+    program_df = get_object_df(
+        'Program__c', ['Id', 'Name'], where=f"Name IN ({str(sections_of_interest)[1:-1]})",
+        rename_id=True, rename_name=True
+    )
 
     student_section_df = get_object_df('Student_Section__c', [
         'Id', 'Name', 'Student_Program__c', 'Program__c', 'Section__c',
@@ -117,8 +120,6 @@ def get_student_section_staff_df(sections_of_interest):
     df = student_section_df.merge(section_df, how='left', on='Section__c')
     df = df.merge(staff_df, how='left', left_on='Intervention_Primary_Staff__c', right_on='Staff__c')
     df = df.merge(program_df, how='left', on='Program__c')
-
-    df = df.loc[df['Program__c_Name'].isin(sections_of_interest)]
 
     return df
 
