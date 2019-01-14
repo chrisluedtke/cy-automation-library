@@ -72,7 +72,7 @@ def prep_coaching_log():
         wb.sheets['ACM1 (2)'].name = f'ACM{x}'
 
 def deploy_choaching_logs():
-    """ Multiply by Schools
+    """Multiply by Schools
     """
     for index, row in sch_ref_df.iterrows():
         school_staff = staff_df.loc[(staff_df['School']==row['School']) &
@@ -106,11 +106,11 @@ def deploy_choaching_logs():
             pos += 1
             wb.sheets[sheet_name].name = f'ACM{pos}'
 
-def deploy_tracker(resource_type, containing_folder):
-    """ Distributes Excel tracker template to school team folders
+def deploy_tracker(resource_type: str, containing_folder: str):
+    """Distributes Excel tracker template to school team folders
 
-    resource_type like 'SY19 Attendance Tracker' or 'SY19 Leadership Tracker'
-    containing_folder like 'Team Documents' or 'Leadership Team Documents'
+    resource_type as 'SY19 Attendance Tracker' or 'SY19 Leadership Tracker'
+    containing_folder as 'Team Documents' or 'Leadership Team Documents'
     """
     template_path = f'Z:\\ChiPrivate\\Chicago Data and Evaluation\\SY19\\Templates\\{resource_type} Template.xlsx'
     wb = xw.Book(template_path)
@@ -127,7 +127,7 @@ def deploy_tracker(resource_type, containing_folder):
 
     wb.close()
 
-def unprotect_ACM_validation_sheet(resource_type, containing_folder):
+def unprotect_ACM_validation_sheet(resource_type: str, containing_folder: str):
     import win32com.client
     import pandas as pd
 
@@ -154,27 +154,39 @@ def update_all_validation_sheets(resource_type: str, containing_folder: str):
         att_df.sort_values('Student_Name__c', inplace=True)
 
     for index, row in sch_ref_df.iterrows():
-        wb = xw.Book(f"Z:\\{row['Informal Name']} {containing_folder}\\{resource_type} - {row['Informal Name']}.xlsx")
+        try:
+            wb = xw.Book(f"Z:\\{row['Informal Name']} "
+                         f"{containing_folder}\\{resource_type} - "
+                         f"{row['Informal Name']}.xlsx")
+        except Exception as e:
+            print(f"Failed to update {resource_type} sheets for "
+                  f"{row['Informal Name']}: {e}")
+            continue
+
         sheet_names = [x.name for x in wb.sheets]
 
         school_staff = staff_df.loc[staff_df['School'] == row['School']].copy()
 
-        wb.sheets['ACM Validation'].clear_contents()
-        wb.sheets['ACM Validation'].range('A1').options(index=False, header=False).value = school_staff[[
+        sht = wb.sheets['ACM Validation']
+        sht.clear_contents()
+        sht.range('A1').options(index=False, header=False).value = school_staff[[
             'Individual__c', 'First_Name_Staff__c', 'Staff__c_Name'
         ]]
 
         if 'Student Validation' in sheet_names and 'Attendance' in resource_type:
             school_att_df = att_df.loc[att_df['School__c']==row['School']].copy()
-            wb.sheets['Student Validation'].clear_contents()
-            wb.sheets['Student Validation'].range('A1').options(index=False, header=False).value = school_att_df[[
+            sht = wb.sheets['Student Validation']
+            sht.clear_contents()
+            sht.range('A1').options(index=False, header=False).value = school_att_df[[
                 'Student_Name__c', 'Student__c'
             ]]
 
         try:
-            wb.save(f"Z:\\{row['Informal Name']} {containing_folder}\\{resource_type} - {row['Informal Name']}.xlsx")
-        except:
-            print(f"Failed to update {resource_type} sheets for: {row['Informal Name']}")
+            wb.save(f"Z:\\{row['Informal Name']} {containing_folder}\\"
+                    f"{resource_type} - {row['Informal Name']}.xlsx")
+        except Exception as e:
+            print(f"Failed to update {resource_type} sheets for "
+                  f"{row['Informal Name']}: {e}")
             pass
 
         #wb.close()

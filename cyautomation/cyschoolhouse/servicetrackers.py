@@ -120,7 +120,7 @@ def update_service_trackers(start_row=0):
         for filepath in Path(TEMP_PATH).iterdir():
             filepath.unlink()
 
-        logf.write(f"Writing Service Tracker: {school}\n")
+        logf.write(f"Writing Service Tracker: {school}")
         print(f"Writing Service Tracker: {school}\n")
 
         df_school = student_section_df.loc[
@@ -154,5 +154,5 @@ def update_service_trackers(start_row=0):
         merge_and_save_one_school_pdf(school_informal_name)
 
     logf.write("Completed script 'Weekly Service Tracker Update'\n")
-    
+
     return
