@@ -8,9 +8,11 @@ from . import simple_cysh as cysh
 
 sch_ref_df = get_sch_ref_df()
 
+
 def academic_sections_to_create():
     """
-    Gather ACM deployment docs to determine which 'Tutoring: Math' and 'Tutoring: Literacy' sections to make
+    Gather ACM deployment docs to determine which 'Tutoring: Math'
+    and 'Tutoring: Literacy' sections to make
     """
     xl = pd.ExcelFile(r'Z:\Impact Analytics Team\SY19 ACM Deployment.xlsx')
 
@@ -28,7 +30,8 @@ def academic_sections_to_create():
         'Related IA (ELA/Math)':'SectionName'
     }, inplace=True)
 
-    acm_dep_df = acm_dep_df.loc[~acm_dep_df['ACM'].isnull() & ~acm_dep_df['SectionName'].isnull()]
+    acm_dep_df = acm_dep_df.loc[~acm_dep_df['ACM'].isnull() &
+                                ~acm_dep_df['SectionName'].isnull()]
 
     acm_dep_df['ACM'] = acm_dep_df['ACM'].str.strip()
     acm_dep_df['SectionName'] = acm_dep_df['SectionName'].str.strip().str.upper()
@@ -61,17 +64,13 @@ def academic_sections_to_create():
         ~acm_dep_df['key'].isin(section_df['key'])
     ]
 
-    df = acm_dep_df.merge(sch_ref_df[['School', 'Informal Name']], how='left', on='Informal Name')
+    df = acm_dep_df.merge(sch_ref_df[['School', 'Informal Name']],
+                          how='left', on='Informal Name')
 
-    df = df[['School', 'ACM', 'SectionName']]
-    df['In_School_or_Extended_Learning'] = 'In School'
-    df['Start_Date'] = '09/04/2018'
-    df['End_Date'] = '06/07/2019'
-    df['Target_Dosage'] = 0
-
-    df.to_excel(os.path.join(os.path.dirname(__file__), 'input_files/section-creator-input.xlsx'), index=False)
+    df = format_and_write_xl(df)
 
     return df
+
 
 def non_CP_sections_to_create(sections_of_interest=['Coaching: Attendance', 'SEL Check In Check Out']):
     """
@@ -94,17 +93,14 @@ def non_CP_sections_to_create(sections_of_interest=['Coaching: Attendance', 'SEL
     acm_df = acm_df.merge(section_deployment, on='key')
     acm_df['key'] = acm_df['Id'] + acm_df['SectionName']
 
-    acm_df = acm_df.loc[~acm_df['key'].isin(section_df['key'])]
+    df = acm_df.loc[~acm_df['key'].isin(section_df['key'])]
 
-    acm_df.rename(columns={'Staff__c_Name':'ACM'}, inplace=True)
+    df = df.rename(columns={'Staff__c_Name':'ACM'})
 
-    acm_df = acm_df[['School', 'ACM', 'SectionName']]
-    acm_df['In_School_or_Extended_Learning'] = 'In School'
-    acm_df['Start_Date'] = '09/04/2018'
-    acm_df['End_Date'] = '06/07/2019'
-    acm_df['Target_Dosage'] = 0
+    df = format_and_write_xl(df)
 
-    return acm_df
+    return df
+
 
 def MIRI_sections_to_create():
     """
@@ -117,7 +113,9 @@ def MIRI_sections_to_create():
 
     staff_df = cysh.get_object_df('Staff__c', ['Id', 'Name'], where="Site__c='Chicago'", rename_name=True)
 
-    section_df = cysh.get_object_df('Section__c', ['Id', 'Name', 'Intervention_Primary_Staff__c', 'School__c', 'Program__c'], rename_id=True, rename_name=True)
+    section_cols = ['Id', 'Name', 'Intervention_Primary_Staff__c', 'School__c',
+                    'Program__c']
+    section_df = cysh.get_object_df('Section__c', section_cols, rename_id=True, rename_name=True)
     section_df = section_df.merge(school_df, how='left', on='School__c')
     section_df = section_df.merge(program_df, how='left', on='Program__c')
     section_df = section_df.merge(staff_df, how='left', left_on='Intervention_Primary_Staff__c', right_on='Id')
@@ -146,17 +144,36 @@ def MIRI_sections_to_create():
     for df in [section_df, miri_section_df]:
         df['key'] = df['Staff__c_Name'] + df['Program__c_Name']
 
-    section_df = section_df.loc[~section_df['key'].isin(miri_section_df['key'])]
+    df = (section_df.loc[~section_df['key'].isin(miri_section_df['key'])]
+                    .rename(columns={
+                        'Staff__c_Name':'ACM',
+                        'Program__c_Name':'SectionName'
+                    }))
 
-    section_df.rename(columns={'Staff__c_Name':'ACM', 'Program__c_Name':'SectionName'}, inplace=True)
-    section_df['In_School_or_Extended_Learning'] = 'In School'
-    section_df['Start_Date'] = '09/04/2018'
-    section_df['End_Date'] = '06/07/2019'
-    section_df['Target_Dosage'] = 0
+    df = format_and_write_xl(df)
 
-    section_df = section_df[['School', 'ACM', 'SectionName', 'In_School_or_Extended_Learning', 'Start_Date', 'End_Date', 'Target_Dosage']]
+    return df
 
-    return section_df
+
+def format_and_write_xl(df, start_date='09/04/2018', end_date='06/07/2019',
+                        in_sch_ext_lrn='In School', target_dosage=0):
+
+    df = pd.DataFrame({
+        'School':df.School,
+        'ACM':df.ACM,
+        'SectionName':df.SectionName,
+        'In_School_or_Extended_Learning':in_sch_ext_lrn,
+        'Start_Date':start_date,
+        'End_Date':end_date,
+        'Target_Dosage':target_dosage
+    })
+
+    write_path = os.path.join(os.path.dirname(__file__),
+                              'input_files/section-creator-input.xlsx')
+    df.to_excel(write_path, index=False)
+
+    return df
+
 
 def deactivate_all_sections(section_type):
     """
@@ -164,19 +181,25 @@ def deactivate_all_sections(section_type):
     a `50 Acts of Greatness` section is made, as the default section type selection.
     We don't provide this programming in Chicago, so we can safely deactivate all.
     """
-    # De-activate 50 Acts sections
-    section_df = cysh.get_object_df('Section__c', ['Id', 'Name', 'Intervention_Primary_Staff__c', 'School__c', 'Program__c', 'Active__c'], rename_id=True, rename_name=True)
+    section_cols = ['Id', 'Name', 'Intervention_Primary_Staff__c',
+                    'School__c', 'Program__c', 'Active__c']
+    section_df = cysh.get_object_df('Section__c', section_cols, rename_id=True, rename_name=True)
     program_df = cysh.get_object_df('Program__c', ['Id', 'Name'], rename_id=True, rename_name=True)
 
     df = section_df.merge(program_df, how='left', on='Program__c')
 
-    sections_to_delete = df.loc[
+    df = df.loc[
         (df['Program__c_Name']==section_type) &
         (section_df['Active__c']==True),
         'Section__c'
     ]
 
-    print(f"{len(sections_to_delete)} '50 Acts' sections to de-activate.")
+    print(f"{len(df)} {section_type} sections to de-activate.")
+    user_input = input("Are you sure? (yes/y to continue): ").lower()
 
-    for section_id in sections_to_delete:
-        cysh.sf.Section__c.update(section_id, {'Active__c':False})
+    if user_input in ['yes', 'y']:
+        for section_id in df:
+            cysh.sf.Section__c.update(section_id, {'Active__c':False})
+        return True
+    else:
+        return False
