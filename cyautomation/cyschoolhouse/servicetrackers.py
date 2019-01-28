@@ -13,6 +13,8 @@ sch_ref_df = get_sch_ref_df()
 
 
 def get_section_enrollment_table(sections_of_interest):
+    """
+    """
     df = cysh.get_student_section_staff_df(sections_of_interest)
 
     # group by Student_Program__c, then sum ToT
@@ -98,7 +100,7 @@ def merge_and_save_one_school_pdf(school_informal_name):
 def update_service_trackers(start_row=0):
     """ Runs the entire Service Tracker publishing process
     """
-    logf = open(f"{LOG_PATH}\\Service Tracker Log.log", "w")
+    logf = open(f"{LOG_PATH}/Service Tracker Log.log", "w")
 
     student_section_df = get_section_enrollment_table(
         sections_of_interest= [
@@ -110,7 +112,7 @@ def update_service_trackers(start_row=0):
     )
 
     # Open Excel Template and define sheet references
-    xlsx_path = f"{TEMPLATES_PATH}\\Service Tracker Template.xlsx"
+    xlsx_path = f"{TEMPLATES_PATH}/Service Tracker Template.xlsx"
 
     # Iterate through school names to build Service Tracker PDFs
     for school in student_section_df['School_Reference_Id__c'].unique()[start_row:]:
@@ -128,21 +130,19 @@ def update_service_trackers(start_row=0):
             ].copy()
 
         for acm_name in df_school['Staff__c_Name'].unique():
-            acm_df = df_school.loc[
-                df_school['Staff__c_Name'] == acm_name
-                ].copy()
+            acm_df = df_school.loc[df_school['Staff__c_Name']==acm_name].copy()
 
-            pdf_path = f"{TEMP_PATH}\\{acm_name}.pdf"
+            pdf_path = f"{TEMP_PATH}/{acm_name}.pdf"
 
             try:
                 fill_one_acm_wb(acm_df, acm_name, wb, logf)
                 wb.sheets['Service Tracker'].api.ExportAsFixedFormat(0, pdf_path)
             except Exception as e:
                 text = ('Error filling template or saving pdf for '
-                        f"{acm_name}: {e}\n")
+                        f"{acm_name}: {e}")
                 logf.write(text)
                 print(text)
-                pass
+                continue
 
         xw.apps.active.kill()
 

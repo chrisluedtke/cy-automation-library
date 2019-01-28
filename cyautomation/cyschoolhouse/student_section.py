@@ -7,7 +7,7 @@ from . import simple_cysh as cysh
 #df = cysh.get_object_df('Student_Program__c')
 
 def enrollment_sync(source_section, destination_section, enrollment_start_date, ACM_to_TL=False):
-    """ Syncs student enrollment across different section types
+    """ Syncs student enrollment across different section types. Requires salesforce 2FA.
 
     In Chicago, we use this to ensure students enrolled in 'Tutoring: Math' or 'Tutoring: Literacy' are also enrolled in 'DESSA'
     """
