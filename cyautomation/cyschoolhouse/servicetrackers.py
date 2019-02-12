@@ -97,7 +97,7 @@ def merge_and_save_one_school_pdf(school_informal_name):
     return None
 
 
-def update_service_trackers(start_row=0):
+def update_service_trackers():
     """ Runs the entire Service Tracker publishing process
     """
     logf = open(f"{LOG_PATH}/Service Tracker Log.log", "w")
@@ -115,7 +115,7 @@ def update_service_trackers(start_row=0):
     xlsx_path = f"{TEMPLATES_PATH}/Service Tracker Template.xlsx"
 
     # Iterate through school names to build Service Tracker PDFs
-    for school in student_section_df['School_Reference_Id__c'].unique()[start_row:]:
+    for school in student_section_df['School_Reference_Id__c'].unique():
         wb = xw.Book(xlsx_path)
 
         # Ensure `temp` folder is empty
@@ -142,11 +142,9 @@ def update_service_trackers(start_row=0):
                         f"{acm_name}: {e}")
                 logf.write(text)
                 print(text)
-                continue
 
         xw.apps.active.kill()
 
-        # Look up school's informal name
         school_informal_name = sch_ref_df.loc[
             sch_ref_df['School'] == school, 'Informal Name'
             ].values[0]

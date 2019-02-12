@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from time import sleep
 
 import numpy as np
@@ -7,19 +8,22 @@ from selenium.webdriver.support.ui import Select
 
 from . import simple_cysh as cysh
 from .cyschoolhousesuite import get_driver, open_cyschoolhouse
+from .config import INPUT_PATH
 from .sendemail import send_email
 
-def _sf_api_approach():
-    """ This is how the task would be accomplished via salesforce API, if only I could edit the fields:
+def _sf_api_approach(xlsx_path):
     """
-
-    df = pd.read_excel(r'C:\Users\City_Year\Downloads\New Students for cyschoolhouse(1-11).xlsx')
+    This is how the task would be accomplished via salesforce API, 
+    if only I could edit the fields:
+    """
+    df = pd.read_excel(xlsx_path)
     school_df = get_cysh_df('Account', ['Id', 'Name'])
     df = df.merge(school_df, how='left', left_on='School', right_on='Name')
 
     drop_ids = []
     for index, row in df.iterrows():
-        search_result = cysh.sf.query(f"SELECT Id FROM Student__c WHERE Local_Student_ID__c = '{row['Student CPS ID']}'")
+        search_result = cysh.sf.query('SELECT Id FROM Student__c WHERE '
+                                      f"Local_Student_ID__c = '{row['Student CPS ID']}'")
         if len(search_result['records']) > 0:
             drop_ids.append(row['Student CPS ID'])
     df = df.loc[~df['Student CPS ID'].isin(drop_ids)]
@@ -104,17 +108,21 @@ def input_file(driver, path_to_csv):
 def insert_data(driver):
     driver.find_element_by_xpath('//*[@id="startBatchButton"]').click()
 
-def upload_all(enrollment_date, xlsx_dir=os.path.join(os.path.dirname(__file__),'input_files'), xlsx_name='New Students for cyschoolhouse.xlsx', sf=cysh.sf):
+def upload_all(enrollment_date, xlsx_dir=INPUT_PATH,
+               xlsx_name='New Students for cyschoolhouse.xlsx', sf=cysh.sf):
     """ Runs the entire student upload process.
     """
-    xlsx_path = os.path.join(xlsx_dir, xlsx_name)
+    xlsx_path = str(Path(xlsx_dir) / xlsx_name)
 
     params = import_parameters(xlsx_path, enrollment_date)
     params = remove_extant_students(params)
 
-    setup_df = cysh.get_object_df('Setup__c', ['Id', 'School__c'], rename_id=True, rename_name=True)
+    setup_df = cysh.get_object_df('Setup__c', ['Id', 'School__c'],
+                                  rename_id=True, rename_name=True)
     school_df = cysh.get_object_df('Account', ['Id', 'Name'])
-    setup_df = setup_df.merge(school_df, how='left', left_on='School__c', right_on='Id'); del school_df
+    setup_df = setup_df.merge(school_df, how='left', left_on='School__c',
+                              right_on='Id')
+    del school_df
     setup_df = setup_df.loc[~setup_df['Id'].isnull()]
 
     if len(params) == 0:
@@ -126,14 +134,17 @@ def upload_all(enrollment_date, xlsx_dir=os.path.join(os.path.dirname(__file__),
 
     for school_name in params['School'].unique():
         # Write csv
-        path_to_csv = os.path.join(xlsx_dir, f"SY19 New Students for CYSH - {school_name}.csv")
+        path_to_csv = str(Path(xlsx_dir) /
+                          f"SY19 New Students for CYSH - {school_name}.csv")
         df_csv = params.loc[params["School"]==school_name].copy()
         df_csv.drop(["School"], axis=1, inplace=True)
         df_csv.to_csv(path_to_csv, index=False, date_format='%m/%d/%Y')
 
         # Navigatge to student enrollment page
         setup_id = setup_df.loc[setup_df['Name']==school_name, 'Setup__c'].values[0]
-        driver.get(f'https://c.na30.visual.force.com/apex/CT_core_LoadCsvData_v2?setupId={setup_id}&OldSideBar=true&type=Student')
+        driver.get('https://c.na30.visual.force.com/apex/'
+                   f'CT_core_LoadCsvData_v2?setupId={setup_id}'
+                   '&OldSideBar=true&type=Student')
         sleep(2)
 
         input_file(driver, path_to_csv)
