@@ -1,7 +1,7 @@
 import os
 
 import pandas as pd
-from StyleFrame import StyleFrame, Styler, utils
+# from StyleFrame import StyleFrame, Styler, utils
 
 from .config import get_sch_ref_df
 from . import simple_cysh as cysh
@@ -21,7 +21,8 @@ def fix_T1T2ELT(sf=cysh.sf):
 
     all_typos = '|'.join(list(typo_map.keys()))
 
-    df = cysh.get_object_df('Intervention_Session__c', ['Id', 'Comments__c'], rename_id=True)
+    df = cysh.get_object_df('Intervention_Session__c', ['Id', 'Comments__c'],
+                            rename_id=True)
     df['Comments__c'].fillna('', inplace=True)
     df = df.loc[df['Comments__c'].str.contains(all_typos)]
 
@@ -113,31 +114,34 @@ def write_error_tables_to_cyconnect(df):
         school_error_df = df.loc[df['School'] == row['School']].copy()
         del school_error_df['School']
 
-        write_path = f"Z:\\{row['Informal Name']} Team Documents\\SY19 ToT Audit Errors - {row['Informal Name']}.xlsx"
+        write_path = (f"Z:/{row['Informal Name']} Team Documents/SY19 ToT Audit "
+                      f"Errors - {row['Informal Name']}.xlsx")
 
         if os.path.exists(write_path):
             os.remove(write_path)
 
-        excel_writer = StyleFrame.ExcelWriter(write_path)
-        sfr = StyleFrame(school_error_df)
-        sfr.apply_column_style(
-            cols_to_style=list(school_error_df),
-            styler_obj=Styler(
-                horizontal_alignment=utils.horizontal_alignments.left,
-                #vertical_alignment=utils.vertical_alignments.top
-            ),
-            width=25,
-            style_header=False,
-        )
+        school_error_df.to_excel(write_path)
 
-        if len(school_error_df) > 0:
-            freeze = 'A2'
-        else:
-            freeze = 'A1'
-
-        sfr.to_excel(
-            excel_writer=excel_writer,
-            row_to_add_filters=0,
-            columns_and_rows_to_freeze=freeze,
-        )
-        excel_writer.save()
+        # excel_writer = StyleFrame.ExcelWriter(write_path)
+        # sfr = StyleFrame(school_error_df)
+        # sfr.apply_column_style(
+        #     cols_to_style=list(school_error_df),
+        #     styler_obj=Styler(
+        #         horizontal_alignment=utils.horizontal_alignments.left,
+        #         #vertical_alignment=utils.vertical_alignments.top
+        #     ),
+        #     width=25,
+        #     style_header=False,
+        # )
+        #
+        # if len(school_error_df) > 0:
+        #     freeze = 'A2'
+        # else:
+        #     freeze = 'A1'
+        #
+        # sfr.to_excel(
+        #     excel_writer=excel_writer,
+        #     row_to_add_filters=0,
+        #     columns_and_rows_to_freeze=freeze,
+        # )
+        # excel_writer.save()
