@@ -13,54 +13,38 @@ def fill_one_coaching_log_acm_rollup(wb):
     sht = wb.sheets['ACM Rollup']
     sht.range('A:N').clear_contents()
 
-    cols = [
-        'Individual__c',
-        'ACM',
-        'Date',
-        'Role',
-        'Coaching Cycle',
-        'Subject',
-        'Focus',
-        'Strategy/Skill',
-        'Notes',
-        'Action Steps',
-        'Completed?',
-        'Followed Up'
-    ]
+    cols = ['Individual__c', 'ACM', 'Date', 'Role', 'Coaching Cycle', 'Subject',
+            'Focus', 'Strategy/Skill', 'Notes', 'Action Steps', 'Completed?',
+            'Followed Up']
 
     sht.range('A1').value = cols
+    sht.range('A2:A3000').value = ("=INDEX('ACM Validation'!$A:$A, "
+                                   "MATCH($B2, 'ACM Validation'!$C:$C, 0))")
 
-    sht.range(f'A2:A3000').value = "=INDEX('ACM Validation'!$A:$A, MATCH($B2, 'ACM Validation'!$C:$C, 0))"
-
-    not_acm_sheets = [
-        'Dev Tracker',
-        'Dev Map',
-        'ACM Validation',
-        'ACM Rollup',
-        'Calendar Validation',
-        'Log Validation',
-    ]
+    not_acm_sheets = ['Dev Tracker', 'Dev Map', 'ACM Validation', 'ACM Rollup',
+                      'Calendar Validation', 'Log Validation']
 
     acm_sheets = [x.name for x in wb.sheets if x.name not in not_acm_sheets]
 
-    start_row = 2
+    row = 2
     for sheet_name in acm_sheets:
         sheet_name = sheet_name.replace("'", "''")
-        sht.range(f'B{start_row}:B{start_row + 300}').value = f"='{sheet_name}'!$A$1"
-        sht.range(f'C{start_row}:L{start_row + 300}').value = f"='{sheet_name}'!A3"
-        start_row += 300
+        sht.range(f'B{row}:B{row + 300}').value = f"='{sheet_name}'!$A$1"
+        sht.range(f'C{row}:L{row + 300}').value = f"='{sheet_name}'!A3"
+        row += 300
 
 def fill_all_coaching_log_acm_rollup():
     for index, row in sch_ref_df.iterrows():
         try:
-            wb = xw.Book(f"Z:\\{row['Informal Name']} Leadership Team Documents\\SY19 Coaching Log - {row['Informal Name']}.xlsx")
+            wb = xw.Book(f"Z:/{row['Informal Name']} Leadership Team Documents/"
+                         f"SY19 Coaching Log - {row['Informal Name']}.xlsx")
             fill_one_coaching_log_acm_rollup(wb)
-            wb.save(f"Z:\\{row['Informal Name']} Leadership Team Documents\\SY19 Coaching Log - {row['Informal Name']}.xlsx")
-            wb.close()
+            wb.save(f"Z:/{row['Informal Name']} Leadership Team Documents/"
+                    f"SY19 Coaching Log - {row['Informal Name']}.xlsx")
         except:
             print(f"{row['Informal Name']} failed to generate ACM Rollup sheet")
+        finally:
             wb.close()
-            pass
 
 def prep_coaching_log():
     wb.sheets['Dev Tracker'].range('A1,A5:L104').clear_contents()
@@ -213,7 +197,7 @@ def update_acm_stdnt_validation_sheets(resource_type: str, containing_folder: st
 
     return True
 
-def update_coach_log_validation(sheet_name = "Log Validation",
+def update_coach_log_validation(sheet_name='Log Validation',
                                 resource_type='SY19 Coaching Log',
                                 containing_folder='Leadership Team Documents',
                                 sch_ref_df=sch_ref_df):
@@ -252,7 +236,7 @@ def update_coach_log_validation(sheet_name = "Log Validation",
         for i, item in enumerate(names):
             col_chr = chr(65 + i)
             row_n = 1
-            (wb.sheets['ACM Rollup']
+            (wb.sheets[sheet_name]
                .range(f"${col_chr}$1:${col_chr}$300")
                .clear_contents())
             xw.Range(f"'{sheet_name}'!${col_chr}${row_n}").value = item.upper()

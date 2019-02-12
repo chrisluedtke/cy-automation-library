@@ -2,27 +2,41 @@ from . import simple_cysh as cysh
 
 ## Demo of how to pull student object
 #school_df = cysh.get_object_df('Account', ['Id', 'Name'])
-#student_df = cysh.get_object_df('Student__c', ['Id', 'Name', 'Local_Student_ID__c', 'School__c', 'External_Id__c'], where=f"School__c IN ({str(school_df['Id'].tolist())[1:-1]})")
+#student_df = cysh.get_object_df(
+    # 'Student__c',
+    # ['Id', 'Name', 'Local_Student_ID__c', 'School__c', 'External_Id__c'],
+    # where=f"School__c IN ({str(school_df['Id'].tolist())[1:-1]})")
 #
 #df = cysh.get_object_df('Student_Program__c')
 
-def enrollment_sync(source_section, destination_section, enrollment_start_date, ACM_to_TL=False):
-    """ Syncs student enrollment across different section types. Requires salesforce 2FA.
+def enrollment_sync(source_section, destination_section, enrollment_start_date,
+                    ACM_to_TL=False):
+    """ Syncs student enrollment across different section types. Requires
+    salesforce 2FA.
 
-    In Chicago, we use this to ensure students enrolled in 'Tutoring: Math' or 'Tutoring: Literacy' are also enrolled in 'DESSA'
+    In Chicago, we use this to ensure students enrolled in 'Tutoring: Math' or
+    'Tutoring: Literacy' are also enrolled in 'DESSA'
     """
 
     if type(source_section) != str or type(destination_section) != str:
-        raise ValueError(f'source_section and destination_section must be strings.')
+        raise ValueError(f'source_section and destination_section '
+                         'must be strings.')
 
-    program_df = cysh.get_object_df('Program__c', ['Id', 'Name'], rename_id=True, rename_name=True)
+    program_df = cysh.get_object_df('Program__c', ['Id', 'Name'],
+                                    rename_id=True, rename_name=True)
 
     for x in [source_section, destination_section]:
-        if x not in program_df['Program__c_Name'].tolist():
-            raise ValueError(f'{x} is not a valid section type.')
+        section_tpyes = program_df['Program__c_Name'].tolist()
+        if x not in section_tpyes:
+            raise ValueError(f'{x} is not a valid section type. '
+                             f'Try one of: {section_tpyes}')
 
-    student_section_df = cysh.get_object_df('Student_Section__c', ['Id', 'Student__c', 'Section__c'])
-    section_df = cysh.get_object_df('Section__c', ['Id', 'Name', 'School__c', 'Program__c', 'Intervention_Primary_Staff__c'], rename_id=True, rename_name=True)
+    student_section_df = cysh.get_object_df('Student_Section__c',
+                                            ['Id', 'Student__c', 'Section__c'])
+    section_df = cysh.get_object_df('Section__c',
+                                    ['Id', 'Name', 'School__c', 'Program__c',
+                                    'Intervention_Primary_Staff__c'],
+                                    rename_id=True, rename_name=True)
 
     school_df = cysh.get_object_df('Account', ['Id', 'Name'])
     school_df = school_df.rename(columns={'Id':'School__c', 'Name':'School'})
@@ -30,7 +44,8 @@ def enrollment_sync(source_section, destination_section, enrollment_start_date, 
     section_df = section_df.merge(school_df, how='left', on='School__c')
     section_df = section_df.merge(program_df, how='left', on='Program__c')
 
-    student_section_df = student_section_df.merge(section_df, how='left', on='Section__c')
+    student_section_df = student_section_df.merge(section_df, how='left',
+                                                  on='Section__c')
 
     # get students enrolled in source section
     source_enrollment_df = student_section_df.loc[student_section_df['Program__c_Name'] == source_section].copy()
