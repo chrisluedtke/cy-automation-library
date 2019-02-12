@@ -120,7 +120,7 @@ def write_error_tables_to_cyconnect(df):
         if os.path.exists(write_path):
             os.remove(write_path)
 
-        school_error_df.to_excel(write_path)
+        school_error_df.to_excel(write_path, index=False)
 
         # excel_writer = StyleFrame.ExcelWriter(write_path)
         # sfr = StyleFrame(school_error_df)
