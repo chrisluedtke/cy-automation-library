@@ -36,13 +36,10 @@ def check_sf_session(func):
     def wrapper(*args, **kwargs):
         global sf
         try:
-            sf.query('')
+            return func(*args, **kwargs)
         except SalesforceExpiredSession:
             sf = init_sf_session()
-        except SalesforceMalformedRequest:
-            pass
-        finally:
-            return func(*args, **kwargs)
+            return func(*args, **kwargs)            
 
     return wrapper
 
