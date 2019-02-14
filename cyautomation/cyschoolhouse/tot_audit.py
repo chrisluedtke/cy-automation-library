@@ -32,14 +32,21 @@ def fix_T1T2ELT(sf=cysh.sf):
 
     results = []
     for index, row in df.iterrows():
-        result = sf.Intervention_Session__c.update(row['Intervention_Session__c'], {'Comments__c':row['Comments__c']})
+        result = sf.Intervention_Session__c.update(row.Intervention_Session__c,
+                                                   {'Comments__c':row['Comments__c']})
         results.append(results)
 
     return results
 
 def get_error_table():
-    ISR_df = cysh.get_object_df('Intervention_Session_Result__c', ['Amount_of_Time__c', 'IsDeleted', 'Intervention_Session_Date__c', 'Related_Student_s_Name__c', 'Intervention_Session__c', 'CreatedDate'])
-    IS_df = cysh.get_object_df('Intervention_Session__c', ['Id', 'Name', 'Comments__c', 'Section__c'], rename_id=True, rename_name=True)
+    ISR_df = cysh.get_object_df('Intervention_Session_Result__c',
+                                ['Amount_of_Time__c', 'IsDeleted',
+                                'Intervention_Session_Date__c',
+                                'Related_Student_s_Name__c',
+                                'Intervention_Session__c', 'CreatedDate'])
+    IS_df = cysh.get_object_df('Intervention_Session__c',
+                               ['Id', 'Name', 'Comments__c', 'Section__c'],
+                               rename_id=True, rename_name=True)
     section_df = cysh.get_object_df('Section__c', ['Id', 'School__c', 'Intervention_Primary_Staff__c', 'Program__c'], rename_id=True)
 
     school_df = cysh.get_object_df('Account', ['Id', 'Name'])
@@ -66,13 +73,14 @@ def get_error_table():
            & df['Comments__c'].str.contains('T1')
            & df['Comments__c'].str.contains('T2'), 'Listed T1 and T2'] = 'Listed T1 and T2'
 
-    df.loc[df['Program__c_Name'].str.contains('Tutoring|SEL')
+    df.loc[df['Program__c_Name'].str.contains('Tutoring')
            & (df['Amount_of_Time__c'] < 10), '<10 Minutes'] = '<10 Minutes'
 
     df.loc[df['Program__c_Name'].str.contains('Tutoring')
            & (df['Amount_of_Time__c'] > 120), '>120 Minutes'] = '>120 Minutes'
 
-    df.loc[df['Intervention_Session_Date__c'] > df['CreatedDate'], 'Logged in Future'] = 'Logged in Future'
+    df.loc[df['Intervention_Session_Date__c'] > df['CreatedDate'],
+           'Logged in Future'] = 'Logged in Future'
 
     df.loc[df['Program__c_Name'].isin(['DESSA', 'Math Inventory', 'Reading Inventory']), 'Wrong Section'] = 'Wrong Section'
 
@@ -81,7 +89,7 @@ def get_error_table():
     df['Error'] = df[error_cols].apply(lambda x: x.str.cat(sep=' & '), axis=1)
 
     accepted_errors_df = pd.read_excel((
-        "Z:\\ChiPrivate\\Chicago Data and Evaluation\\SY19\\"
+        "Z:/ChiPrivate/Chicago Data and Evaluation/SY19/"
         "SY19 ToT Audit Accepted Errors.xlsx"
     ))
 
