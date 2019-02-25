@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import pandas as pd
 import xlwings as xw
@@ -18,13 +19,13 @@ def fill_one_coaching_log_acm_rollup(wb):
             'Followed Up']
 
     sht.range('A1').value = cols
-    sht.range('A2:A3000').value = ("=INDEX('ACM Validation'!$A:$A, "
+    sht.range('A2:A3002').value = ("=INDEX('ACM Validation'!$A:$A, "
                                    "MATCH($B2, 'ACM Validation'!$C:$C, 0))")
 
-    not_acm_sheets = ['Dev Tracker', 'Dev Map', 'ACM Validation', 'ACM Rollup',
-                      'Calendar Validation', 'Log Validation']
-
-    acm_sheets = [x.name for x in wb.sheets if x.name not in not_acm_sheets]
+    skip_sheets = ['Dev Tracker', 'Dev Map', 'ACM Validation', 'ACM Rollup',
+                   'Calendar Validation', 'Log Validation']
+    skip_sheets = set(skip_sheets + [f'Sheet{_}' for _ in range(1,9)])
+    acm_sheets = sorted(list(set([x.name for x in wb.sheets]) - skip_sheets))
 
     row = 2
     for sheet_name in acm_sheets:
@@ -33,40 +34,61 @@ def fill_one_coaching_log_acm_rollup(wb):
         sht.range(f'C{row}:L{row + 300}').value = f"='{sheet_name}'!A3"
         row += 300
 
-def fill_all_coaching_log_acm_rollup():
+    return None
+
+
+def fill_all_coaching_log_acm_rollup(sch_ref_df=sch_ref_df):
+    app = xw.App()
+    # app.display_alerts = False
     for index, row in sch_ref_df.iterrows():
         try:
-            wb = xw.Book(f"Z:/{row['Informal Name']} Leadership Team Documents/"
+            xlsx_path = (f"Z:/{row['Informal Name']} Leadership Team Documents/"
                          f"SY19 Coaching Log - {row['Informal Name']}.xlsx")
+            wb = app.books.open(xlsx_path)
             fill_one_coaching_log_acm_rollup(wb)
-            wb.save(f"Z:/{row['Informal Name']} Leadership Team Documents/"
-                    f"SY19 Coaching Log - {row['Informal Name']}.xlsx")
+            wb.save(xlsx_path)
+            print(f"{row['Informal Name']} Coaching Log ACM Rollup updated")
         except:
             print(f"{row['Informal Name']} failed to generate ACM Rollup sheet")
         finally:
-            wb.close()
+            for _ in app.books:
+                _.close()
 
-def prep_coaching_log():
+    app.kill()
+
+    return None
+
+
+def prep_coaching_log(wb):
     wb.sheets['Dev Tracker'].range('A1,A5:L104').clear_contents()
-    wb.sheets['ACM1'].range('A1,A3:J300').clear_contents()
 
     # Create ACM Copies
+    sht = wb.sheets['ACM1']
+    sht.range('A1,A3:J300').clear_contents()
+
     for x in range(2,11):
-        wb.sheets['ACM1'].api.Copy(Before=wb.sheets['Dev Map'].api)
+        sht.api.Copy(Before=wb.sheets['Dev Map'].api)
         wb.sheets['ACM1 (2)'].name = f'ACM{x}'
 
-def deploy_choaching_logs():
+    return None
+
+
+def deploy_choaching_logs(wb, staff_df, sch_ref_df=sch_ref_df):
     """Multiply by Schools
     """
     for index, row in sch_ref_df.iterrows():
-        school_staff = staff_df.loc[(staff_df['School']==row['School']) &
-                                    staff_df['Role__c'].str.contains('Corps Member')]
+        condition = ((staff_df['School']==row['School']) &
+                     staff_df['Role__c'].str.contains('Corps Member'))
+        school_staff = staff_df.loc[condition].copy()
 
-        wb.sheets['Dev Tracker'].range('A1,A5:L104').clear_contents()
-        wb.sheets['Dev Tracker'].range('A1').value = f"SY19 Coaching Log - {row['Informal Name']}"
+        sht = wb.sheets['Dev Tracker']
+        sht.range('A1,A5:L104').clear_contents()
+        sht.range('A1').value = ("SY19 Coaching Log - "
+                                 f"{row['Informal Name']}")
 
-        wb.sheets['ACM Validation'].range('A:N').clear()
-        wb.sheets['ACM Validation'].range('A1').options(index=False, header=False).value = school_staff.copy()
+        sht = wb.sheets['ACM Validation']
+        sht.range('A:N').clear()
+        sht.range('A1').options(index=False, header=False).value = school_staff
 
         pos = 0
         sheets_added = []
@@ -75,10 +97,11 @@ def deploy_choaching_logs():
             sht = wb.sheets[f'ACM{pos}']
             sht.name = staff_row['First_Name_Staff__c']
             sht.range('A1').value = staff_row['Name']
-            sheets_added += [sht.name]
+            sheets_added.append(sht.name)
 
         try:
-            wb.save(f"Z:\\{row['Informal Name']} Leadership Team Documents\\SY19 Coaching Log - {row['Informal Name']}.xlsx")
+            wb.save(f"Z:/{row['Informal Name']} Leadership Team Documents/"
+                    f"SY19 Coaching Log - {row['Informal Name']}.xlsx")
         except Exception as e:
             print(f"Save failed {row['Informal Name']}: {e}")
             pass
@@ -88,6 +111,9 @@ def deploy_choaching_logs():
         for sheet_name in sheets_added:
             pos += 1
             wb.sheets[sheet_name].name = f'ACM{pos}'
+
+    return None
+
 
 def deploy_tracker(resource_type: str, containing_folder: str):
     """Distributes Excel tracker template to school team folders
@@ -100,8 +126,9 @@ def deploy_tracker(resource_type: str, containing_folder: str):
     wb = xw.Book(template_path)
 
     for index, row in sch_ref_df.iterrows():
-        wb.sheets['Tracker'].range('A1').clear_contents()
-        wb.sheets['Tracker'].range('A1').value = f"{resource_type} - {row['Informal Name']}"
+        sht = wb.sheets['Tracker']
+        sht.range('A1').clear_contents()
+        sht.range('A1').value = f"{resource_type} - {row['Informal Name']}"
 
         try:
             wb.save(f"Z:/{row['Informal Name']} {containing_folder}/"
@@ -111,6 +138,7 @@ def deploy_tracker(resource_type: str, containing_folder: str):
             continue
 
     wb.close()
+
 
 def unprotect_sheets(resource_type: str, containing_folder: str,
                      sheet_name: str, sch_ref_df=sch_ref_df):
@@ -130,6 +158,9 @@ def unprotect_sheets(resource_type: str, containing_folder: str,
 
     xcl.Quit()
 
+    return None
+
+
 def update_acm_stdnt_validation_sheets(resource_type: str, containing_folder: str,
                                        sch_ref_df=sch_ref_df):
     """
@@ -148,30 +179,29 @@ def update_acm_stdnt_validation_sheets(resource_type: str, containing_folder: st
     staff_df = staff_df.loc[condition]
 
     if 'Attendance' in resource_type:
-        att_df = cysh.get_student_section_staff_df(sections_of_interest='Coaching: Attendance')
-        att_df.sort_values('Student_Name__c', inplace=True)
+        att_df = cysh.get_student_section_staff_df(
+            sections_of_interest='Coaching: Attendance'
+        )
+        att_df = att_df.sort_values('Student_Name__c')
 
     app = xw.App()
-    app.display_alerts = False
+    # app.display_alerts = False
 
     for index, row in sch_ref_df.iterrows():
         xlsx_path = (f"Z:/{row['Informal Name']} {containing_folder}/"
                      f"{resource_type} - {row['Informal Name']}.xlsx")
         try:
             wb = app.books.open(xlsx_path)
-        except Exception as e:
-            print(f"Failed to open {resource_type} for "
-                  f"{row['Informal Name']}: {e}")
-        else:
+
             sheet_names = [x.name for x in wb.sheets]
 
-            school_staff = staff_df.loc[staff_df['School'] == row['School']].copy()
+            cols = ['Individual__c', 'First_Name_Staff__c', 'Staff__c_Name']
+            school_staff = (staff_df.loc[staff_df['School'] == row['School'], cols]
+                                    .copy())
 
             sht = wb.sheets['ACM Validation']
             sht.clear_contents()
-            sht.range('A1').options(index=False, header=False).value = school_staff[[
-                'Individual__c', 'First_Name_Staff__c', 'Staff__c_Name'
-            ]]
+            sht.range('A1').options(index=False, header=False).value = school_staff
 
             if 'Student Validation' in sheet_names and 'Attendance' in resource_type:
                 school_att_df = att_df.loc[att_df['School__c']==row['School']].copy()
@@ -181,28 +211,26 @@ def update_acm_stdnt_validation_sheets(resource_type: str, containing_folder: st
                     school_att_df[['Student_Name__c', 'Student__c']]
                 )
 
-                try:
-                    wb.save(xlsx_path)
-                except Exception as e:
-                    print(f"Failed to update {resource_type} sheets for "
-                          f"{row['Informal Name']}: {e}")
+            wb.save(xlsx_path)
+        except Exception as e:
+            print(f"Failed to update {resource_type} sheets for "
+                  f"{row['Informal Name']}: {e}")
         finally:
             for _ in app.books:
                 _.close()
-            # may be necessary to kill and reboot the app:
-            # xw.apps.active.kill()
 
     for _ in xw.apps:
         _.kill()
 
-    return True
+    return None
+
 
 def update_coach_log_validation(sheet_name='Log Validation',
                                 resource_type='SY19 Coaching Log',
                                 containing_folder='Leadership Team Documents',
                                 sch_ref_df=sch_ref_df):
     """
-    Overwrites the 'Log Validation' sheet of all schools' coaching logs
+    Overwrites 'Log Validation' sheet of all schools' coaching logs
     """
     # {MetaName: {NameOfRange: [RangeItems] } }
     names = {
@@ -227,23 +255,24 @@ def update_coach_log_validation(sheet_name='Log Validation',
         },
     }
 
+    app = xw.App()
     for index, row in sch_ref_df.iterrows():
         xlsx_path = (f"Z:/{row['Informal Name']} {containing_folder}/"
                      f"{resource_type} - {row['Informal Name']}.xlsx")
 
-        wb = xw.Book(xlsx_path)
+        wb = app.books.open(xlsx_path)
 
         for i, item in enumerate(names):
             col_chr = chr(65 + i)
-            row_n = 1
-            (wb.sheets[sheet_name]
-               .range(f"${col_chr}$1:${col_chr}$300")
-               .clear_contents())
-            xw.Range(f"'{sheet_name}'!${col_chr}${row_n}").value = item.upper()
+            sht = wb.sheets[sheet_name]
+            sht.range(f"${col_chr}$1:${col_chr}$300").clear_contents()
+            xw.Range(f"'{sheet_name}'!${col_chr}$1").value = item.upper()
 
+            row_n = 1
             for sub_item in names[item]:
                 row_n += 2
-                xw.Range(f"'{sheet_name}'!${col_chr}${row_n}").value = sub_item.upper()
+                xl_range = f"'{sheet_name}'!${col_chr}${row_n}"
+                xw.Range(xl_range).value = sub_item.upper()
 
                 row_n += 1
                 row_end = row_n + len(names[item][sub_item]) - 1
@@ -253,6 +282,11 @@ def update_coach_log_validation(sheet_name='Log Validation',
                 row_n = row_end
 
         wb.save(xlsx_path)
-        xw.apps.active.kill()
+
+        for _ in app.books:
+            _.close()
+
+    for _ in xw.apps:
+        _.kill()
 
     return True
