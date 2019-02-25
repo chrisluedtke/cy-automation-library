@@ -1,4 +1,5 @@
 from configparser import ConfigParser
+import logging
 import os
 
 from pathlib import Path
@@ -50,6 +51,23 @@ TEMP_PATH = str(Path(__file__).parent / 'temp')
 TEMPLATES_PATH = str(Path(__file__).parent / 'templates')
 SCH_REF_PATH = ('Z:/ChiPrivate/Chicago Data and Evaluation/'
                 'SY19/SY19 School Reference.xlsx')
+
+def set_logger(name):
+    logger = logging.getLogger(name)
+    logger.setLevel('DEBUG')
+
+    format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    formatter = logging.Formatter(format)
+
+    file_log_handler = logging.FileHandler(str(Path(LOG_PATH) / f"{name}.log"))
+    file_log_handler.setFormatter(formatter)
+    logger.addHandler(file_log_handler)
+
+    stderr_log_handler = logging.StreamHandler()
+    stderr_log_handler.setFormatter(formatter)
+    logger.addHandler(stderr_log_handler)
+
+    return logger
 
 def get_sch_ref_df(sch_df_path=SCH_REF_PATH):
     sch_ref_df = pd.read_excel(sch_df_path)
