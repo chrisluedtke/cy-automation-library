@@ -133,8 +133,11 @@ def MIRI_sections_to_create():
 
     section_df = section_df.loc[section_df['School'].isin(highschools)]
 
-    miri_section_df = section_df.loc[section_df['Program__c_Name'].str.contains('Inventory')]
-    section_df = section_df.loc[section_df['Program__c_Name'].str.contains('Tutoring')]
+    condition = section_df['Program__c_Name'].str.contains('Inventory')==True
+    miri_section_df = section_df.loc[condition]
+
+    condition = section_df['Program__c_Name'].str.contains('Tutoring')==True
+    section_df = section_df.loc[condition]
 
     section_df['Program__c_Name'] = section_df['Program__c_Name'].map({
         'Tutoring: Literacy':'Reading Inventory',
