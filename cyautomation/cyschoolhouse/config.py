@@ -19,8 +19,16 @@ __all__ = [
 ]
 
 USER_SITE = 'Chicago'
-
 SANDBOX = False
+INPUT_PATH = str(Path(__file__).parent / 'input')
+LOG_PATH = str(Path(__file__).parent / 'log')
+TEMP_PATH = str(Path(__file__).parent / 'temp')
+TEMPLATES_PATH = str(Path(__file__).parent / 'templates')
+SCH_REF_PATH = ('Z:/ChiPrivate/Chicago Data and Evaluation/'
+                'SY19/SY19 School Reference.xlsx')
+
+if not os.path.exists(TEMP_PATH):
+    os.mkdir(TEMP_PATH)
 
 creds_path = str(Path(__file__).parent / 'credentials.ini')
 config = ConfigParser()
@@ -28,7 +36,7 @@ config = ConfigParser()
 try:
     open(creds_path)
 except FileNotFoundError:
-    raise FileNotFoundError('Before you can use this pacakge, you must create '
+    raise FileNotFoundError('Before you can use this library, you must create '
                             'a credentials.ini file. See the README for '
                             'details.')
 else:
@@ -44,13 +52,6 @@ elif SANDBOX == True:
 SF_USER = sf_creds['username']
 SF_PASS = sf_creds['password']
 SF_TOKN = sf_creds['security_token']
-
-INPUT_PATH = str(Path(__file__).parent / 'input')
-LOG_PATH = str(Path(__file__).parent / 'log')
-TEMP_PATH = str(Path(__file__).parent / 'temp')
-TEMPLATES_PATH = str(Path(__file__).parent / 'templates')
-SCH_REF_PATH = ('Z:/ChiPrivate/Chicago Data and Evaluation/'
-                'SY19/SY19 School Reference.xlsx')
 
 def set_logger(name):
     logger = logging.getLogger(name)
