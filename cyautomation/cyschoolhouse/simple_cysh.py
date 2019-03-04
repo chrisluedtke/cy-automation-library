@@ -39,7 +39,7 @@ def check_sf_session(func):
             return func(*args, **kwargs)
         except SalesforceExpiredSession:
             sf = init_sf_session()
-            return func(*args, **kwargs)            
+            return func(*args, **kwargs)
 
     return wrapper
 
@@ -169,15 +169,15 @@ def get_staff_df():
     school_df = get_object_df('Account', ['Id', 'Name'])
     school_df = school_df.rename(columns={'Id':'Organization__c',
                                           'Name':'School'})
-    schools = ', '.join(school_df['Organization__c'].tolist())
 
     staff_cols = ['Id', 'Individual__c', 'Name', 'First_Name_Staff__c',
                   'Staff_Last_Name__c', 'Role__c', 'Email__c',
                   'Organization__c']
+    schools_q = str(school_df['Organization__c'].tolist())[1:-1]
     staff_df = get_object_df(
         'Staff__c',
         staff_cols,
-        where=f"Organization__c IN ({schools})",
+        where=f"Organization__c IN ({schools_q})",
         rename_name=True,
         rename_id=True
     )
