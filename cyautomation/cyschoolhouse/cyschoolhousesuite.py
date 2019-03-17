@@ -56,7 +56,10 @@ def get_driver():
     profile.set_preference('browser.download.folderList', 2)
     profile.set_preference('browser.download.manager.showWhenStarting', False)
     profile.set_preference('browser.download.dir', TEMP_PATH)
-    profile.set_preference('browser.helperApps.neverAsk.saveToDisk', ('application/csv,text/csv,application/vnd.ms-excel,application/x-msexcel,application/excel,application/x-excel,text/comma-separated-values'))
+    profile.set_preference('browser.helperApps.neverAsk.saveToDisk',
+                           ('application/csv,text/csv,application/vnd.ms-excel,'
+                            'application/x-msexcel,application/excel,'
+                            'application/x-excel,text/comma-separated-values'))
     return Firefox(firefox_profile=profile, executable_path=GECKO_PATH)
 
 def standard_login(driver, prompt_user_pass=False):
@@ -72,8 +75,10 @@ def standard_login(driver, prompt_user_pass=False):
 def open_cyschoolhouse(driver=None, prompt_user_pass=False):
     """Opens the cyschoolhouse instance
 
-    You will need to monitor your email inbox at this point to copy+paste an authentication code.
+    You will need to monitor your email inbox at this point to copy+paste an
+    authentication code.
     """
+
     if driver is None:
         driver = get_driver()
 
