@@ -67,8 +67,10 @@ def save_section(driver):
     """ Saves the section
     """
     driver.find_element_by_css_selector('input.black_btn:nth-child(2)').click()
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH,
-                                                                    '/html/body/div[1]/div[3]/table/tbody/tr/td[2]/div[4]/div[1]/table/tbody/tr/td[2]/input[5]')))
+    x_path = ('/html/body/div[1]/div[3]/table/tbody/tr/td[2]/div[4]/div[1]/'
+              'table/tbody/tr/td[2]/input[5]')
+    condition = EC.presence_of_element_located((By.XPATH, x_path))
+    WebDriverWait(driver, 10).until(condition)
 
 def update_nickname(driver, nickname):
     driver.find_element_by_css_selector('#topButtonRow > input:nth-child(3)').click()
@@ -77,7 +79,8 @@ def update_nickname(driver, nickname):
     driver.find_element_by_xpath("//input[@value=' Save ']").click()
     sleep(2)
 
-def create_single_section(school, acm, sectionname, insch_extlrn, start_date, end_date, target_dosage, nickname=None, driver=None):
+def create_single_section(school, acm, sectionname, insch_extlrn, start_date,
+                          end_date, target_dosage, nickname="", driver=None):
     """ Creates one single section
     """
     if driver is None:
@@ -89,13 +92,13 @@ def create_single_section(school, acm, sectionname, insch_extlrn, start_date, en
     select_subject(driver, sectionname)
     sleep(2.5)
     input_staff_name(driver, acm)
-    fill_static_elements(driver, insch_extlrn, start_date, end_date, target_dosage)
+    fill_static_elements(driver, insch_extlrn, start_date, end_date,
+                         target_dosage)
     sleep(1)
     save_section(driver)
     logging.info(f"Created {sectionname} section for {acm}")
-    if nickname is not None:
-        if nickname != "":
-            update_nickname(driver, nickname)
+    if nickname:
+        update_nickname(driver, nickname)
 
 def section_creation(driver=None):
     """ Runs the entire script.
@@ -108,11 +111,14 @@ def section_creation(driver=None):
 
     for index, row in params.iterrows():
         try:
-            create_single_section(school=row['School'], acm=row['ACM'], sectionname=row['SectionName'],
-                insch_extlrn=row['In_School_or_Extended_Learning'], start_date=row['Start_Date'], end_date=row['End_Date'],
-                target_dosage=row['Target_Dosage'], driver=driver)
+            create_single_section(
+                school=row['School'], acm=row['ACM'],
+                sectionname=row['SectionName'],
+                insch_extlrn=row['In_School_or_Extended_Learning'],
+                start_date=row['Start_Date'], end_date=row['End_Date'],
+                target_dosage=row['Target_Dosage'], driver=driver
+            )
         except:
-            print(f"Section creation failed: {row['ACM']}, {row['SectionName']}")
             logging.error(f"Section creation failed: {row['ACM']}, {row['SectionName']}")
             driver.get('https://na30.salesforce.com/')
             try:
