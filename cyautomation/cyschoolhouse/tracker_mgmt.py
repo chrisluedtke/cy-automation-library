@@ -48,6 +48,8 @@ def fill_all_coaching_log_acm_rollup(sch_ref_df=sch_ref_df):
             fill_one_coaching_log_acm_rollup(wb)
             wb.save(xlsx_path)
             print(f"{row['Informal Name']} Coaching Log ACM Rollup updated")
+        except (KeyboardInterrupt, SystemExit):
+            raise
         except:
             print(f"{row['Informal Name']} failed to generate ACM Rollup sheet")
         finally:
@@ -102,6 +104,8 @@ def deploy_choaching_logs(wb, staff_df, sch_ref_df=sch_ref_df):
         try:
             wb.save(f"Z:/{row['Informal Name']} Leadership Team Documents/"
                     f"SY19 Coaching Log - {row['Informal Name']}.xlsx")
+        except (KeyboardInterrupt, SystemExit):
+            raise
         except Exception as e:
             print(f"Save failed {row['Informal Name']}: {e}")
             pass
@@ -133,8 +137,10 @@ def deploy_tracker(resource_type: str, containing_folder: str):
         try:
             wb.save(f"Z:/{row['Informal Name']} {containing_folder}/"
                     f"{resource_type} - {row['Informal Name']}.xlsx")
-        except:
-            print(f"Save failed {row['Informal Name']}")
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as e:
+            print(f"Save failed {row['Informal Name']}: {e}")
             continue
 
     wb.close()
@@ -212,15 +218,15 @@ def update_acm_stdnt_validation_sheets(resource_type: str, containing_folder: st
                 )
 
             wb.save(xlsx_path)
+        except (KeyboardInterrupt, SystemExit):
+            raise
         except Exception as e:
             print(f"Failed to update {resource_type} sheets for "
                   f"{row['Informal Name']}: {e}")
         finally:
-            for _ in app.books:
-                _.close()
+            wb.close()
 
-    for _ in xw.apps:
-        _.kill()
+    app.kill()
 
     return None
 
