@@ -49,9 +49,13 @@ elif SANDBOX == True:
     SF_URL = "https://cs59.salesforce.com"
     sf_creds = config['Salesforce Sandbox']
 
+okta_creds = config['Single Sign On']
+
 SF_USER = sf_creds['username']
 SF_PASS = sf_creds['password']
 SF_TOKN = sf_creds['security_token']
+OKTA_USER = okta_creds['username']
+OKTA_PASS = okta_creds['password']
 
 def set_logger(name):
     logger = logging.getLogger(name)
