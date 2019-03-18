@@ -20,7 +20,7 @@ __all__ = [
 
 USER_SITE = 'Chicago'
 SANDBOX = False
-INPUT_PATH = str(Path(__file__).parent / 'input')
+INPUT_PATH = str(Path(__file__).parent / 'input_files')
 LOG_PATH = str(Path(__file__).parent / 'log')
 TEMP_PATH = str(Path(__file__).parent / 'temp')
 TEMPLATES_PATH = str(Path(__file__).parent / 'templates')
@@ -75,7 +75,7 @@ def set_logger(name):
     return logger
 
 def get_sch_ref_df(sch_df_path=SCH_REF_PATH):
-    sch_ref_df = pd.read_excel(sch_df_path)
-    sch_ref_df = sch_ref_df.loc[~sch_ref_df['Informal Name'].isin(['CE', 'Onboarding'])]
+    df = pd.read_excel(sch_df_path)
+    df = df.loc[~df['Informal Name'].isin(['CE', 'Onboarding'])]
 
-    return sch_ref_df
+    return df

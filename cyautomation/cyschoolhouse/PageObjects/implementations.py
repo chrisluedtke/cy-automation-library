@@ -10,7 +10,9 @@ from selenium.common.exceptions import (
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 
 from . import pages as page
-from ..config import OKTA_USER, OKTA_PASS, SF_USER, SF_PASS, TEMP_PATH
+from ..config import (
+    INPUT_PATH, OKTA_USER, OKTA_PASS, SF_USER, SF_PASS, TEMP_PATH
+)
 
 GECKO_PATH = str(Path(__file__).parents[3] / 'geckodriver/geckodriver.exe')
 
@@ -117,12 +119,13 @@ class Okta(BaseImplementation):
 
 class IndicatorAreaEnrollment(Okta):
     """Implementation object for Indicator Area Enrollment"""
-    from pandas import read_excel
 
-    xl_path = str(Path(__file__).parents[1] /
-                  'input_files/indicator_area_roster.xlsx')
-    data = read_excel(xl_path)
-    student_list = data['Student: Student ID'].unique()
+    def __init__(self):
+        from pandas import read_excel
+
+        xl_path = str(Path(INPUT_PATH) / 'indicator_area_roster.xlsx')
+        self.data = read_excel(xl_path)
+        self.student_list = self.data['Student: Student ID'].unique()
 
     def nav_to_form(self):
         """Initial setup script for IA enrollment.
