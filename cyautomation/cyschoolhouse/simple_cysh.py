@@ -105,19 +105,19 @@ def get_section_df(sections_of_interest):
     if type(sections_of_interest)==str:
         sections_of_interest = list(sections_of_interest)
 
+    program_df = get_object_df(
+        'Program__c', ['Id', 'Name'],
+        where=f"Name IN ({str(sections_of_interest)[1:-1]})",
+        rename_id=True, rename_name=True)
+
     section_df = get_object_df(
         'Section__c',
         ['Id', 'Name', 'Intervention_Primary_Staff__c', 'Program__c'],
-        rename_id=True,
-        rename_name=True
+        rename_id=True, rename_name=True,
+        where=f"Program__c IN ({str(program_df['Program__c'].tolist())[1:-1]})",
     )
 
-    program_df = get_object_df('Program__c', ['Id', 'Name'], rename_id=True,
-                               rename_name=True)
-
     df = section_df.merge(program_df, how='left', on='Program__c')
-
-    df = df.loc[df['Program__c_Name'].isin(sections_of_interest)]
 
     return df
 
