@@ -4,7 +4,7 @@
 *.pyc
 *.bat
 /batch-files/*
-/chi-notebooks/*
+/notebooks/*
 selenium-testing/testfile.csv
 cyautomation/cyschoolhouse/input_files/*
 cyautomation/cyschoolhouse/temp/*
