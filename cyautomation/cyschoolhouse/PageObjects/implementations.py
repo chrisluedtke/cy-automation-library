@@ -3,9 +3,10 @@ from pathlib import Path
 import sys
 from time import sleep
 
+from pandas import read_excel
 from seleniumrequests import Firefox
 from selenium.common.exceptions import (
-    TimeoutException, StaleElementReferenceException
+    NoSuchElementException, StaleElementReferenceException, TimeoutException
 )
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 
@@ -91,11 +92,13 @@ class IndicatorAreaEnrollment(Okta):
     """Implementation object for Indicator Area Enrollment"""
 
     def __init__(self):
-        from pandas import read_excel
         super().__init__()
         xl_path = str(Path(INPUT_PATH) / 'indicator_area_roster.xlsx')
         self.data = read_excel(xl_path)
-        self.student_list = self.data['Student: Student ID'].unique()
+
+    @property
+    def student_list(self):
+        return self.data['Student: Student ID'].unique()
 
     def nav_to_form(self):
         """Initial setup script for IA enrollment.
@@ -114,7 +117,7 @@ class IndicatorAreaEnrollment(Okta):
     def get_student_details(self, student_id):
         """Returns a students details including school, grade, name, and ia list given their id"""
         student_records = self.data[self.data['Student: Student ID'] == student_id]
-        school = student_records.School.unique()[0]
+        school = student_records['School'].unique()[0]
         grade = student_records['Student: Grade'].unique()[0]
         name = student_records['Student: Student Last Name'].unique()[0]
         ia_list = student_records['Indicator Area'].values
@@ -126,48 +129,37 @@ class IndicatorAreaEnrollment(Okta):
         ia_form.wait_for_page_to_load()
         school, grade, name, ia_list = self.get_student_details(student_id)
         ia_form.select_school(school)
-        sleep(1)
         ia_form.select_grade(str(grade))
-        sleep(1)
+        ia_form.select_first_page()
+
         for ia in ia_list:
-            ia_form.name_search = name
-            sleep(3)
-            self.assign_ias(student_id, ia)
-            sleep(2)
+            ia_form.select_student(student_id)
+            ia_form.assign_indicator_area(ia)
+
         ia_form.save()
 
-    def assign_ias(self, student_id, ia):
-        """Assign an IA for a single student and indicator"""
-        ia_form = page.CyshIndicatorAreas(self.driver)
-        ia_form.wait_for_page_to_load()
-        ia_form.select_student(student_id)
-        sleep(3)
-        ia_form.assign_indicator_area(ia)
-
-    def enroll_all_students(self):
+    def enroll_all_students(self, max_errors=5):
         """Executes the full IA enrollment"""
         self.nav_to_form()
         self.error_count = 0
         for student_id in self.student_list:
-            if self.error_count == 5:
-                self.error_count = 0
-                self.driver.quit()
-                self.driver = self.get_driver()
-                self.nav_to_form()
+            if self.error_count == max_errors:
+                return None
 
             try:
                 self.enroll_student(student_id)
+
             except KeyboardInterrupt:
                 return None
 
             except TimeoutException:
-                print(f"Timeout Failure on student: {student_id}")
+                print(f"Timeout Failure on student {student_id}")
                 self.error_count += 1
 
-            except StaleElementReferenceException:
-                print(f"Stale Element failure on student: {student_id}")
+            except StaleElementReferenceException as e:
+                print(f"Error on student {student_id}: StaleElementReferenceException {e}")
                 self.error_count += 1
 
             except Exception as e:
-                print(f"Caught a {e} error on student: {student_id}")
+                print(f"Error on student {student_id}: {e}")
                 self.error_count += 1

@@ -4,6 +4,7 @@ from time import sleep
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.common.by import By
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 
 from . import locators as loc
 from . import elements as elem
@@ -50,7 +51,7 @@ class OktaHomePage(BasePage):
         self.driver.get(SF_URL)
 
     def launch_cyschoolhouse_sandbox(self):
-        self.driver.get(SF__SB_URL)
+        self.driver.get(SF_SB_URL)
 
 class CyshHomePage(BasePage):
     """Actions for the cyschoolhouse Home Page"""
@@ -70,23 +71,32 @@ class CyshHomePage(BasePage):
 
 class CyshIndicatorAreas(BasePage):
 
-    name_search = elem.IaNameSearch()
-
     def wait_for_page_to_load(self):
         WebDriverWait(self.driver, 100)\
             .until(EC.presence_of_all_elements_located(loc.IndicatorAreaLocators.PAGE_TITLE))
 
     def select_school(self, school_name):
         """Updates the school selector to the given school name"""
-        WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(loc.IndicatorAreaLocators.SCHOOL_SELECT))
+        WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable(loc.IndicatorAreaLocators.SCHOOL_SELECT)
+        )
         selector = Select(self.driver.find_element(*loc.IndicatorAreaLocators.SCHOOL_SELECT))
         selector.select_by_visible_text(school_name)
+        sleep(0.75)
 
     def select_grade(self, grade):
         """Updates the school selector to the given school name"""
         WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(loc.IndicatorAreaLocators.GRADE_SELECT))
         selector = Select(self.driver.find_element(*loc.IndicatorAreaLocators.GRADE_SELECT))
         selector.select_by_visible_text(grade)
+        sleep(0.75)
+
+    def select_first_page(self):
+        """Start from the first page"""
+        first_page = self.driver.find_elements(By.LINK_TEXT, 'First')
+        if first_page:
+            first_page[0].click()
+            sleep(0.5)
 
     def select_student(self, student_id):
         """Selects a visible student using their Salesforce Id
@@ -96,24 +106,43 @@ class CyshIndicatorAreas(BasePage):
         by switching to css selectors and selecting the first cell of the chosen row instead of selecting
         the row itself.
         """
-        WebDriverWait(self.driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, "//table[@id='StudentsTable']")))
-        table = self.driver.find_element_by_css_selector("Table[id*='StudentsTable'] tbody")
-        student = table.find_element_by_css_selector("tr[id ^= '" + student_id + "'] td")
-        student.click()
-        self.driver.find_element(*loc.IndicatorAreaLocators.ADD_BUTTON).click()
+        WebDriverWait(self.driver, 10).until(
+            EC.presence_of_all_elements_located((By.XPATH, "//table[@id='StudentsTable']"))
+        )
+        try:
+            WebDriverWait(self.driver, 1.5).until(
+                EC.visibility_of_element_located((By.CSS_SELECTOR, f"tr[id ^= '{student_id}'] td"))
+            )
+        except TimeoutException:
+            try:
+                self.driver.find_element(By.LINK_TEXT, 'Next').click()
+                sleep(0.5)
+            except NoSuchElementException:
+                raise Exception('Student not found')
+
+            return self.select_student(student_id)
+
+        self.driver.find_element(By.CSS_SELECTOR, f"tr[id ^= '{student_id}'] td").click()
+        sleep(0.5)
+        WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable(loc.IndicatorAreaLocators.ADD_TO_IA_BUTTON)
+        )
+        self.driver.find_element(*loc.IndicatorAreaLocators.ADD_TO_IA_BUTTON).click()
 
     def assign_indicator_area(self, ia):
         ia_dict = {
-                'Attendance' : loc.IndicatorAreaLocators.ATTENDANCE,
-                'Behavior' : loc.IndicatorAreaLocators.BEHAVIOR,
-                'ELA/Literacy' : loc.IndicatorAreaLocators.ELA,
-                'Math' : loc.IndicatorAreaLocators.MATH
+            'Attendance': loc.IndicatorAreaLocators.ATTENDANCE,
+            'Behavior': loc.IndicatorAreaLocators.BEHAVIOR,
+            'ELA/Literacy': loc.IndicatorAreaLocators.ELA,
+            'Math': loc.IndicatorAreaLocators.MATH,
         }
         WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(ia_dict[ia]))
         self.driver.find_element(*ia_dict[ia]).click()
-        self.driver.find_element(*loc.IndicatorAreaLocators.ADD_INDICATOR).click()
+        sleep(0.25)
+        self.driver.find_element(*loc.IndicatorAreaLocators.ADD_IA_BUTTON).click()
+        WebDriverWait(self.driver, 10).until(EC.invisibility_of_element_located(loc.IndicatorAreaLocators.IA_WINDOW))
 
     def save(self):
         WebDriverWait(self.driver, 10).until(EC.element_to_be_clickable(loc.IndicatorAreaLocators.SAVE))
         self.driver.find_element(*loc.IndicatorAreaLocators.SAVE).click()
-        sleep(3)
+        WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located(loc.IndicatorAreaLocators.SUCCESS_MSG))

@@ -214,12 +214,9 @@ def get_ia_to_assign():
                     'Assign Indicator Area':'Indicator Area',
             }))
 
-    # sort by last name because it won't work if student is not on first page
-    df = df.sort_values(['Student: Student Last Name'])
-
     cols =['School', 'Student: Student ID', 'Student: Grade',
            'Student: Student Last Name', 'Indicator Area']
-    df = df[cols]
+    df = df[cols].sort_values(cols)
 
     write_path = str(Path(INPUT_PATH) / 'indicator_area_roster.xlsx')
     df.to_excel(write_path, index=False)
