@@ -129,6 +129,10 @@ class IndicatorAreaEnrollment(Okta):
         ia_form.wait_for_page_to_load()
         school, grade, name, ia_list = self.get_student_details(student_id)
         ia_form.select_school(school)
+
+        if school in ['Schurz High School']:
+            ia_form.select_grade(str(int(grade) + 1))
+
         ia_form.select_grade(str(grade))
         ia_form.select_first_page()
 
