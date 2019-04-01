@@ -136,6 +136,7 @@ def get_assessment_details():
 
 def assign_ia_col(df, section_type, assmt_df, assmt__name, is_active=False,
                   min_time=None, min_days_active=None):
+    """Fills a column with IAs to assign for a given student based on Chicago's rules"""
     ia_dict = {
         'Coaching: Attendance':'Attendance',
         'SEL Check In Check Out':'Behavior',
@@ -194,13 +195,13 @@ def get_ia_to_assign():
 
     df = assign_ia_col(df, section_type='Tutoring: Math',
                        assmt_df=assmt_df,
-                       assmt__name='NWEA: MATH',
+                       assmt__name='NWEA - MATH',
                        min_time=1,
                        is_active=True)
 
     df = assign_ia_col(df, section_type='Tutoring: Literacy',
                        assmt_df=assmt_df,
-                       assmt__name='NWEA: ELA',
+                       assmt__name='NWEA - ELA',
                        min_time=1,
                        is_active=True)
 

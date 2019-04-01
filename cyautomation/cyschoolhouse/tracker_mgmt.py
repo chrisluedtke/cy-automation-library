@@ -193,7 +193,7 @@ def update_acm_stdnt_validation_sheets(resource_type: str, containing_folder: st
     app = xw.App()
     # app.display_alerts = False
 
-    for index, row in sch_ref_df.iterrows():
+    for _, row in sch_ref_df.iterrows():
         xlsx_path = (f"Z:/{row['Informal Name']} {containing_folder}/"
                      f"{resource_type} - {row['Informal Name']}.xlsx")
         try:
