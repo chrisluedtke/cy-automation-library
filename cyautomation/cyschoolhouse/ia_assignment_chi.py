@@ -155,7 +155,7 @@ def assign_ia_col(df, section_type, assmt_df, assmt__name, is_active=False,
 
     if 'Tutoring:' in section_type:
         mask = mask & (df['Student__c'].isin(stu_with_assmt) |
-                       df['Grade__c'].astype(int) > 8)
+                       (df['Grade__c'].astype(int) > 8))
     else:
         mask = mask & df['Student__c'].isin(stu_with_assmt)
 
