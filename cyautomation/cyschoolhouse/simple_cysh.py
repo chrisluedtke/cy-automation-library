@@ -2,23 +2,11 @@ import functools
 from pathlib import Path
 
 import pandas as pd
-from simple_salesforce import (
-    Salesforce,
-    SalesforceExpiredSession,
-    SalesforceMalformedRequest
-)
+from simple_salesforce import (Salesforce, SalesforceExpiredSession,
+                               SalesforceMalformedRequest)
 
 from .config import *
 
-__all__ = [
-    'init_sf_session',
-    'get_object_df',
-    'get_object_fields',
-    'get_section_df',
-    'get_student_section_staff_df',
-    'get_staff_df',
-    'sf'
-]
 
 def init_sf_session():
     sf = Salesforce(
@@ -189,5 +177,5 @@ def get_staff_df():
 
 @check_sf_session
 def object_reference():
-    sf_describe = sf.describe()
-    return {object['name']:object['label'] for object in result['sobjects']}
+    result = sf.describe()
+    return {obj['name']:obj['label'] for obj in result['sobjects']}
