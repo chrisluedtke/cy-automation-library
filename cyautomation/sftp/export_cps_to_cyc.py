@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pysftp
 
+# this script appends a "YYYY.MM.DD" subdirectory to this path
 OUTDIR = "Z:/ChiPrivate/Chicago Data and Evaluation/SY20/CPS SFTP"
 
 def get_creds(key_name, creds_path = 'credentials.ini'):
