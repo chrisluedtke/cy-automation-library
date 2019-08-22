@@ -4,10 +4,11 @@
 *.pyc
 *.bat
 /batch-files/*
-/notebooks/*
+/notebooks/ignore/*
 selenium-testing/testfile.csv
 cyautomation/cyschoolhouse/input_files/*
 cyautomation/cyschoolhouse/temp/*
 cyautomation/cyschoolhouse/.vscode/settings.json
 cyautomation/sftp/.ipynb_checkpoints/*
-cyautomation/cyschoolhouse/credentials.ini
+*credentials.ini
+.vscode/*
