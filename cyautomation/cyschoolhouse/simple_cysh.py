@@ -59,15 +59,8 @@ def get_object_df(object_name, field_list=None, where=None, rename_id=False,
 
         query_return = sf.query_all(querystring)
 
-        query_list = []
-        for row in query_return['records']:
-            record = []
-            for column in field_list:
-                col_data = row[column]
-                record.append(col_data)
-            query_list.append(record)
-
-        df = pd.DataFrame(query_list, columns=field_list)
+        df = pd.DataFrame(query_return['records'])
+        df = df[field_list]
 
     else:
         valid_years = ['SY17', 'SY18', 'SY19']
@@ -95,14 +88,14 @@ def get_section_df(sections_of_interest):
 
     program_df = get_object_df(
         'Program__c', ['Id', 'Name'],
-        where=f"Name IN ({str(sections_of_interest)[1:-1]})",
+        where=f"Name IN {in_str(sections_of_interest)}",
         rename_id=True, rename_name=True)
 
     section_df = get_object_df(
         'Section__c',
         ['Id', 'Name', 'Intervention_Primary_Staff__c', 'Program__c'],
         rename_id=True, rename_name=True,
-        where=f"Program__c IN ({str(program_df['Program__c'].tolist())[1:-1]})",
+        where=f"Program__c IN {in_str(program_df['Program__c'])}",
     )
 
     df = section_df.merge(program_df, how='left', on='Program__c')
@@ -118,7 +111,7 @@ def get_student_section_staff_df(sections_of_interest):
     program_df = get_object_df(
         'Program__c',
         ['Id', 'Name'],
-        where=f"Name IN ({str(sections_of_interest)[1:-1]})",
+        where=f"Name IN {in_str(sections_of_interest)}",
         rename_id=True, rename_name=True
     )
 
@@ -130,14 +123,14 @@ def get_student_section_staff_df(sections_of_interest):
     ]
     stu_sect_df = get_object_df(
         'Student_Section__c', stu_sect_cols,
-        where=f"Program__c IN ({str(program_df['Program__c'].tolist())[1:-1]})",
+        where=f"Program__c IN {in_str(program_df['Program__c'])}",
         rename_id=True, rename_name=True
     )
 
     section_df = get_object_df(
         'Section__c',
         ['Id', 'Intervention_Primary_Staff__c'],
-        where=f"Program__c IN ({str(program_df['Program__c'].tolist())[1:-1]})",
+        where=f"Program__c IN {in_str(program_df['Program__c'])}",
         rename_id=True
     )
     staff_df = get_object_df('Staff__c', ['Id', 'Name'], rename_id=True,
@@ -153,22 +146,24 @@ def get_student_section_staff_df(sections_of_interest):
     return df
 
 
-def get_staff_df():
-    school_df = get_object_df('Account', ['Id', 'Name'])
+def get_staff_df(schools=None, roles=None):
+    """
+    schools: List of schools as named in salesforce
+    roles: List of roles as named in salesforce
+    """
+    where = f"Name IN {in_str(schools)}" if schools else None
+    school_df = get_object_df('Account', ['Id', 'Name'], where=where)
     school_df = school_df.rename(columns={'Id':'Organization__c',
                                           'Name':'School'})
 
     staff_cols = ['Id', 'Individual__c', 'Name', 'First_Name_Staff__c',
                   'Staff_Last_Name__c', 'Role__c', 'Email__c',
                   'Organization__c']
-    schools_q = str(school_df['Organization__c'].tolist())[1:-1]
-    staff_df = get_object_df(
-        'Staff__c',
-        staff_cols,
-        where=f"Organization__c IN ({schools_q})",
-        rename_name=True,
-        rename_id=True
-    )
+    where = f"Organization__c IN {in_str(school_df['Organization__c'])}"
+    if roles:
+        where = f"({where} AND Role__c IN {in_str(roles)})"
+    staff_df = get_object_df('Staff__c', staff_cols, where=where, 
+                             rename_name=True, rename_id=True)
 
     staff_df = staff_df.merge(school_df, how='left', on='Organization__c')
 
@@ -179,3 +174,16 @@ def get_staff_df():
 def object_reference():
     result = sf.describe()
     return {obj['name']:obj['label'] for obj in result['sobjects']}
+
+
+def in_str(ls):
+    """ Formats a list to pass into a SOQL WHERE ... IN ... statement
+    """
+    if not isinstance(ls, list):
+        ls = list(ls)
+
+    for i in range(len(ls)):
+        if isinstance(ls[i], str):
+           ls[i] = ls[i].replace("'", "*")
+
+    return f"({str(ls)[1:-1]})".replace("*", "\\'")
