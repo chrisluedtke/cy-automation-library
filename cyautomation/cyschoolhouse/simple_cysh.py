@@ -103,7 +103,7 @@ def get_section_df(sections_of_interest):
     return df
 
 
-def get_student_section_staff_df(sections_of_interest):
+def get_student_section_staff_df(sections_of_interest, schools=None):
     if type(sections_of_interest) == str:
         sections_of_interest = [sections_of_interest]
 
@@ -121,13 +121,16 @@ def get_student_section_staff_df(sections_of_interest):
         'Student_Name__c', 'Dosage_to_Date__c', 'School_Reference_Id__c',
         'Student_Grade__c', 'School__c'
     ]
+    where = f"Program__c IN {in_str(program_df['Program__c'])}"
+    if schools:
+        where = f"({where} AND School__c IN {in_str(schools)})"
     stu_sect_df = get_object_df(
         'Student_Section__c', stu_sect_cols,
-        where=f"Program__c IN {in_str(program_df['Program__c'])}",
+        where=where,
         rename_id=True, rename_name=True
     )
 
-    section_df = get_object_df(
+    section_df = get_object_df(  # TODO: filter this table by schools as well
         'Section__c',
         ['Id', 'Intervention_Primary_Staff__c'],
         where=f"Program__c IN {in_str(program_df['Program__c'])}",
@@ -177,7 +180,7 @@ def object_reference():
 
 
 def in_str(ls):
-    """ Formats a list to pass into a SOQL WHERE ... IN ... statement
+    """ Formats a list to pass into a SOQL "WHERE ... IN ..." statement
     """
     if not isinstance(ls, list):
         ls = list(ls)

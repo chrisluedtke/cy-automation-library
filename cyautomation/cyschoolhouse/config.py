@@ -18,6 +18,7 @@ __all__ = [
     'get_sch_ref_df',
 ]
 
+YEAR = 'SY19'
 USER_SITE = 'Chicago'
 SANDBOX = False
 INPUT_PATH = str(Path(__file__).parent / 'input_files')
@@ -25,7 +26,7 @@ LOG_PATH = str(Path(__file__).parent / 'log')
 TEMP_PATH = str(Path(__file__).parent / 'temp')
 TEMPLATES_PATH = str(Path(__file__).parent / 'templates')
 SCH_REF_PATH = ('Z:/ChiPrivate/Chicago Data and Evaluation/'
-                'SY19/SY19 School Reference.xlsx')
+                f'{YEAR}/{YEAR} School Reference.xlsx')
 
 if not os.path.exists(TEMP_PATH):
     os.mkdir(TEMP_PATH)
