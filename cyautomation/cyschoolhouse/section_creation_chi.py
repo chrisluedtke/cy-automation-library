@@ -12,9 +12,10 @@ sch_ref_df = get_sch_ref_df()
 def academic_sections_to_create():
     """
     Gather ACM deployment docs to determine which 'Tutoring: Math'
-    and 'Tutoring: Literacy' sections to make
+    and 'Tutoring: Literacy' sections to make. Store sections to make in a 
+    spreadsheet at 'input_files/section-creator-input.xlsx'.
     """
-    xl = pd.ExcelFile(r'Z:\Impact Analytics Team\SY19 ACM Deployment.xlsx')
+    xl = pd.ExcelFile(r'Z:/Impact Analytics Team/SY19 ACM Deployment.xlsx')
 
     df_list = []
     for sheet in xl.sheet_names:
@@ -104,7 +105,8 @@ def non_CP_sections_to_create(sections_of_interest=['Coaching: Attendance', 'SEL
 
 def MIRI_sections_to_create():
     """
-    Produce table of ACM 'Math Inventory' and 'Rreading Inventory' sections to make
+    Produce table of ACM 'Math Inventory' and 'Reading Inventory' sections to 
+    make, only relevant to high schools (in Chicago)
     """
     program_df = cysh.get_object_df('Program__c', ['Id', 'Name'], rename_id=True, rename_name=True)
 
@@ -120,6 +122,7 @@ def MIRI_sections_to_create():
     section_df = section_df.merge(program_df, how='left', on='Program__c')
     section_df = section_df.merge(staff_df, how='left', left_on='Intervention_Primary_Staff__c', right_on='Id')
 
+    # TODO: don't store data like this here, put it in the school reference
     highschools = [
         'Tilden Career Community Academy High School',
         'Gage Park High School',

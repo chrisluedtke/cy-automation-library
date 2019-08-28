@@ -13,9 +13,10 @@ from .cyschoolhousesuite import *
 
 
 def import_parameters():
-    """Import configuration data from Excel.
+    """ Import configuration data from Excel.
     """
-    data = pd.read_excel(os.path.join(os.path.dirname(__file__), 'input_files/section-creator-input.xlsx'))
+    data = pd.read_excel(os.path.join(os.path.dirname(__file__), 
+                         'input_files/section-creator-input.xlsx'))
     data['Start_Date'] = pd.to_datetime(data['Start_Date']).dt.strftime('%m/%d/%Y')
     data['End_Date'] = pd.to_datetime(data['End_Date']).dt.strftime('%m/%d/%Y')
     data.fillna('', inplace=True)
@@ -23,13 +24,13 @@ def import_parameters():
     return data
 
 def input_staff_name(driver, staff_name):
-    """Selects the staff name from the drop down
+    """ Selects the staff name from the drop down
     """
     dropdown = Select(driver.find_element_by_id("j_id0:j_id1:staffID"))
     dropdown.select_by_visible_text(staff_name)
 
 def fill_static_elements(driver, insch_extlrn, start_date, end_date, target_dosage):
-    """Fills in the static fields in the section creation form
+    """ Fills in the static fields in the section creation form
 
     Includes the start/end dat, days of week, if time is in or out of school,
     and the estimated amount of time for that section.
@@ -101,7 +102,8 @@ def create_single_section(school, acm, sectionname, insch_extlrn, start_date,
         update_nickname(driver, nickname)
 
 def section_creation(driver=None):
-    """ Runs the entire script.
+    """ Runs the entire script. Loads sections to create from the 
+    spreadsheet at 'input_files/section-creator-input.xlsx'.
     """
     params = import_parameters()
 
