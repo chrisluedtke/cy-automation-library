@@ -3,6 +3,7 @@
 *.log
 *.pyc
 *.bat
+*credentials*
 /batch-files/*
 /notebooks/ignore/*
 selenium-testing/testfile.csv
@@ -10,5 +11,4 @@ cyautomation/cyschoolhouse/input_files/*
 cyautomation/cyschoolhouse/temp/*
 cyautomation/cyschoolhouse/.vscode/settings.json
 cyautomation/sftp/.ipynb_checkpoints/*
-*credentials.ini
 .vscode/*

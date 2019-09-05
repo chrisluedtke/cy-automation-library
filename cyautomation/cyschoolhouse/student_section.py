@@ -100,6 +100,7 @@ def create_one(student__c, section__c, enrollment_start_date, sf=cysh.sf):
 
     return result
 
+
 def exit_one(student_section_id, exit_date, exit_reason, sf=cysh.sf):
     """
     exit_date in the format YYYY-MM-DD
@@ -113,6 +114,7 @@ def exit_one(student_section_id, exit_date, exit_reason, sf=cysh.sf):
 
     return result
 
+
 def undo_exit_one(student_section_id, sf=cysh.sf):
     result = {}
     result['student_section_id'] = student_section_id
@@ -121,6 +123,7 @@ def undo_exit_one(student_section_id, sf=cysh.sf):
     result['Section_Exit_Reason__c'] = sf.Student_Section__c.update(student_section_id, {'Section_Exit_Reason__c':None})
 
     return result
+
 
 def exit_all(exit_date, exit_reason, sf=cysh.sf):
     """

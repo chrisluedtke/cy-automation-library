@@ -9,7 +9,7 @@ from . import simple_cysh as cysh
 sch_ref_df = get_sch_ref_df()
 
 
-def academic_sections_to_create():
+def academic_sections_to_create(start_date, end_date):
     """
     Gather ACM deployment docs to determine which 'Tutoring: Math'
     and 'Tutoring: Literacy' sections to make. Store sections to make in a 
@@ -68,12 +68,12 @@ def academic_sections_to_create():
     df = acm_dep_df.merge(sch_ref_df[['School', 'Informal Name']],
                           how='left', on='Informal Name')
 
-    df = format_and_write_xl(df)
+    df = format_and_write_xl(df, start_date=start_date, end_date=end_date)
 
     return df
 
 
-def non_CP_sections_to_create(sections_of_interest=['Coaching: Attendance', 'SEL Check In Check Out']):
+def non_CP_sections_to_create(sections_of_interest=['Coaching: Attendance', 'SEL Check In Check Out'], start_date, end_date):
     """
     Produce table of sections to create, with the assumption that all 'Corps Member' roles should have 1 of each section.
     """
@@ -98,12 +98,12 @@ def non_CP_sections_to_create(sections_of_interest=['Coaching: Attendance', 'SEL
 
     df = df.rename(columns={'Staff__c_Name':'ACM'})
 
-    df = format_and_write_xl(df)
+    df = format_and_write_xl(df, start_date=start_date, end_date=end_date)
 
     return df
 
 
-def MIRI_sections_to_create():
+def MIRI_sections_to_create(start_date, end_date):
     """
     Produce table of ACM 'Math Inventory' and 'Reading Inventory' sections to 
     make, only relevant to high schools (in Chicago)
@@ -156,7 +156,7 @@ def MIRI_sections_to_create():
                         'Program__c_Name':'SectionName'
                     }))
 
-    df = format_and_write_xl(df)
+    df = format_and_write_xl(df, start_date=start_date, end_date=end_date)
 
     return df
 
