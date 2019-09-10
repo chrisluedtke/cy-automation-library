@@ -1,5 +1,6 @@
 pandas
 PyPDF2
+python-dotenv
 selenium
 selenium-requests
 schedule

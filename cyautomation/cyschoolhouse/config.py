@@ -1,9 +1,11 @@
-from configparser import ConfigParser
 import logging
 import os
-
 from pathlib import Path
+
 import pandas as pd
+from dotenv import load_dotenv
+
+load_dotenv()
 
 __all__ = [
     'USER_SITE',
@@ -18,9 +20,32 @@ __all__ = [
     'get_sch_ref_df',
 ]
 
-YEAR = 'SY19'
-USER_SITE = 'Chicago'
-SANDBOX = False
+# configuration from .env
+YEAR = os.environ['YEAR']
+USER_SITE = os.environ['USER_SITE']
+
+SF_URL_DICT = {
+    'SY19': "https://cs59.salesforce.com",
+    'SY19_SB': "https://na82.salesforce.com",
+    'SY20': "https://na90.salesforce.com",
+    # 'SY_20_SB': "",
+}
+
+if os.getenv('SF_SANDBOX') == 'True':
+    SF_URL = SF_URL_DICT[YEAR + '_SB']
+    SF_USER = os.environ['SF_SB_USER']
+    SF_PASS = os.environ['SF_SB_PASS']
+    SF_TOKN = os.environ['SF_SB_TOKEN']
+else:
+    SF_URL = SF_URL_DICT[YEAR]
+    SF_USER = os.environ['SF_USER']
+    SF_PASS = os.environ['SF_PASS']
+    SF_TOKN = os.environ['SF_TOKEN']
+
+OKTA_USER = os.getenv('OKTA_USER')
+OKTA_PASS = os.getenv('OKTA_PASS')
+
+# configuration
 INPUT_PATH = str(Path(__file__).parent / 'input_files')
 LOG_PATH = str(Path(__file__).parent / 'log')
 TEMP_PATH = str(Path(__file__).parent / 'temp')
@@ -30,33 +55,6 @@ SCH_REF_PATH = ('Z:/ChiPrivate/Chicago Data and Evaluation/'
 
 if not os.path.exists(TEMP_PATH):
     os.mkdir(TEMP_PATH)
-
-creds_path = str(Path(__file__).parent / 'credentials.ini')
-config = ConfigParser()
-
-try:
-    open(creds_path)
-except FileNotFoundError:
-    raise FileNotFoundError('Before you can use this library, you must create '
-                            'a credentials.ini file. See the README for '
-                            'details.')
-else:
-    config.readfp(open(creds_path))
-
-if SANDBOX == False:
-    SF_URL = "https://na82.salesforce.com"
-    sf_creds = config['Salesforce']
-elif SANDBOX == True:
-    SF_URL = "https://cs59.salesforce.com"
-    sf_creds = config['Salesforce Sandbox']
-
-okta_creds = config['Single Sign On']
-
-SF_USER = sf_creds['username']
-SF_PASS = sf_creds['password']
-SF_TOKN = sf_creds['security_token']
-OKTA_USER = okta_creds['username']
-OKTA_PASS = okta_creds['password']
 
 def set_logger(name):
     logger = logging.getLogger(name)

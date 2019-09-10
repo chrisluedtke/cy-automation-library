@@ -3,6 +3,7 @@
 *.log
 *.pyc
 *.bat
+*.env
 *credentials*
 /batch-files/*
 /notebooks/ignore/*

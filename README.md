@@ -40,30 +40,32 @@ Files and folders mentioned in this section are relative to `./cyautomation/cysc
 
 ### Set-up
 
-#### Credentials
+#### Credentials and Configuration
 
-Create a file called `credentials.ini`. Format this file as:
+Create a file called `.env`. Format this file as:
+
 ```
-[Salesforce]
-username = <your Salesforce username>
-password = <your Salesforce password>
-security_token = <your Salesforce security token>
+YEAR = SY20
+USER_SITE = Chicago
 
-[Salesforce Sandbox] # optional
-username = <your Salesforce Sandbox username>
-password = <your Salesforce Sandbox password>
-security_token = <your Salesforce Sandbox security token>
+# change to True to use salesforce sandbox and credentials
+SF_SANDBOX = False
 
-[Single Sign On] # optional, currently used only to send emails
-username = <your Okta username>
-password = <your Okta username>
+SF_USER = 
+SF_PASS = 
+SF_TOKEN = 
+
+# optional
+SF_SB_USER = 
+SF_SB_PASS = 
+SF_SB_TOKEN = 
+
+# optional, currently used only to send emails
+OKTA_USER = 
+OKTA_PASS = 
 ```
 
-You can find this information in Salesforce under your user settings ([visual guide](README-setup-sf.md)). Your username should be similar to `username@cityyear.org.cyschorgb`. The password may not be the same as your Okta single sign-on password. You may need to trigger a password reset in order to obtain the password associated with your Salesforce account. To do so, submit a [service ticket](https://mycityyear.force.com/ServiceDesk/500/o).
-
-#### Config
-
-In `config.py`, you can toggle settings such as entering the sandbox environment (`SANDBOX = True`) and setting your city location (`USER_SITE = 'Chicago'`). Some scripts are specialized to Chicago's functions and file structure, and they are only available to Chicago users. However, different city users are encouraged to explore these scripts and adapt them to your use case.
+You can find these credentials in Salesforce under your user settings ([visual guide](README-setup-sf.md)). Your username should be similar to `username@cityyear.org.cyschorgb`. The password may not be the same as your Okta single sign-on password. You may need to trigger a password reset in order to obtain the password associated with your Salesforce account. To do so, submit a [service ticket](https://mycityyear.force.com/ServiceDesk/500/o).
 
 ## Usage
 
