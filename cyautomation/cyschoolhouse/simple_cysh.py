@@ -155,8 +155,8 @@ def get_staff_df(schools=None, roles=None):
     """
     where = f"Name IN {in_str(schools)}" if schools else None
     school_df = get_object_df('Account', ['Id', 'Name'], where=where)
-    school_df = school_df.rename(columns={'Id':'Organization__c',
-                                          'Name':'School'})
+    school_df = school_df.rename(columns={'Id': 'Organization__c',
+                                          'Name': 'School'})
 
     staff_cols = ['Id', 'Individual__c', 'Name', 'First_Name_Staff__c',
                   'Staff_Last_Name__c', 'Role__c', 'Email__c',

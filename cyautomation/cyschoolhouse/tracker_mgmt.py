@@ -101,7 +101,7 @@ class ExcelTracker:  # class used only for inheritance
                                         close_after=True):
         if not wb:
             wb_path = self.sch_ref_df.loc[school_informal, 'tracker_path']
-            wb = wb = xw.Book(wb_path)
+            wb = xw.Book(wb_path)
 
         school_formal = self.sch_ref_df.loc[school_informal, 'School']
        
