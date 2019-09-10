@@ -5,7 +5,7 @@ import pandas as pd
 from simple_salesforce import (Salesforce, SalesforceExpiredSession,
                                SalesforceMalformedRequest)
 
-from .config import *
+from .config import SF_PASS, SF_TOKN, SF_URL, SF_USER, YEAR, get_sch_ref_df
 
 
 def init_sf_session():
@@ -47,8 +47,20 @@ def get_object_fields(object_name):
 
 @check_sf_session
 def get_object_df(object_name, field_list=None, where=None, rename_id=False,
-                  rename_name=False, year='SY19'):
-    if year=='SY19':
+                  rename_name=False, archive_year=None):
+    if archive_year:
+        archive_year = archive_year.upper()
+        archive_years = ['SY17', 'SY18', 'SY19']
+        if archive_year not in archive_years:
+            raise ValueError(f"Invalid archive_year. Try one of: "
+                             f"{', '.join(archive_years)}.")
+        print('Loading from archive')
+        df = pd.read_csv('Z:/ChiPrivate/Chicago Data and Evaluation/'
+                         'Whole Site End of Year Data/Salesforce Objects/'
+                         f'{archive_year}/{object_name}.csv')
+        if field_list:
+            df = df[field_list]
+    else:
         if not field_list:
             field_list = get_object_fields(object_name)
 
@@ -58,21 +70,10 @@ def get_object_df(object_name, field_list=None, where=None, rename_id=False,
             querystring += f" WHERE {where}"
 
         query_return = sf.query_all(querystring)
-
+        print(query_return)
         df = pd.DataFrame(query_return['records'])
+        print(df)
         df = df[field_list]
-
-    else:
-        valid_years = ['SY17', 'SY18', 'SY19']
-        if year not in valid_years:
-            raise ValueError(f"The year provided ({year}) must be one of:"
-                             f"{', '.join(valid_years)}.")
-
-        df = pd.read_csv('Z:/ChiPrivate/Chicago Data and Evaluation/'
-                         'Whole Site End of Year Data/Salesforce Objects/'
-                         f'{year}/{object_name}.csv')
-        if field_list is not None:
-            df = df[field_list]
 
     if rename_id==True:
         df = df.rename(columns={'Id':object_name})
