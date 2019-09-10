@@ -73,7 +73,7 @@ def academic_sections_to_create(start_date, end_date):
     return df
 
 
-def non_CP_sections_to_create(sections_of_interest=['Coaching: Attendance', 'SEL Check In Check Out'], start_date, end_date):
+def non_CP_sections_to_create(start_date, end_date, sections_of_interest=['Coaching: Attendance', 'SEL Check In Check Out']):
     """
     Produce table of sections to create, with the assumption that all 'Corps Member' roles should have 1 of each section.
     """
