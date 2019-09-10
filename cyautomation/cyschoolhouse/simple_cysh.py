@@ -70,9 +70,7 @@ def get_object_df(object_name, field_list=None, where=None, rename_id=False,
             querystring += f" WHERE {where}"
 
         query_return = sf.query_all(querystring)
-        print(query_return)
         df = pd.DataFrame(query_return['records'])
-        print(df)
         df = df[field_list]
 
     if rename_id==True:
