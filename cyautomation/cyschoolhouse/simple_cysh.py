@@ -54,28 +54,41 @@ def get_object_df(object_name, field_list=None, where=None, rename_id=False,
         if archive_year not in archive_years:
             raise ValueError(f"Invalid archive_year. Try one of: "
                              f"{', '.join(archive_years)}.")
-        print('Loading from archive')
+        print(f'Loading {object_name} from {archive_year} archive')
         df = pd.read_csv('Z:/ChiPrivate/Chicago Data and Evaluation/'
                          'Whole Site End of Year Data/Salesforce Objects/'
                          f'{archive_year}/{object_name}.csv')
         if field_list:
             df = df[field_list]
     else:
+        error = None
+
         if not field_list:
             field_list = get_object_fields(object_name)
 
         querystring = f"SELECT {', '.join(field_list)} FROM {object_name}"
 
         if where:
-            querystring += f" WHERE {where}"
+            querystring += f" WHERE {where}"    
 
-        query_return = sf.query_all(querystring)
-        df = pd.DataFrame(query_return['records'])
-        df = df[field_list]
+        if querystring.endswith('()'):
+            query_return = {'records': []}
+        else:
+            query_return = sf.query_all(querystring)
 
-    if rename_id==True:
+        if query_return['records']:
+            df = pd.DataFrame(query_return['records'])
+            df = df[field_list]
+        else:
+            error = f'Warning: no records found for query: {querystring}'
+
+        if error:
+            print(error)
+            df = pd.DataFrame(columns=field_list)
+
+    if rename_id:
         df = df.rename(columns={'Id':object_name})
-    if rename_name==True:
+    if rename_name:
         df = df.rename(columns={'Name':(object_name+'_Name')})
 
     return df
@@ -162,6 +175,7 @@ def get_staff_df(schools=None, roles=None):
                   'Staff_Last_Name__c', 'Role__c', 'Email__c',
                   'Organization__c']
     where = f"Organization__c IN {in_str(school_df['Organization__c'])}"
+
     if roles:
         where = f"({where} AND Role__c IN {in_str(roles)})"
     staff_df = get_object_df('Staff__c', staff_cols, where=where, 
