@@ -5,21 +5,19 @@ import traceback
 import pandas as pd
 import xlwings as xw
 
-from .config import get_sch_ref_df, YEAR, TEMP_PATH
+from .config import get_sch_ref_df, set_logger, YEAR, TEMP_PATH
 from . import simple_cysh as cysh
 
+
+logger = set_logger(name=Path(__file__).stem)
 
 TRACKER_DIRS = {
     'Service Tracker': 'Team Documents',
 }
 
 # TODO:
-# * intervention trackers will require more manual setup
-# * test deploy 
-# * coaching logs
 # * ToT Audit trackers
 # * Weekly service trackers
-# * SY20 calendars
 
 class ExcelTracker:  # class used only for inheritance
     def __init__(self, kind, folder, test=False):
@@ -30,8 +28,9 @@ class ExcelTracker:  # class used only for inheritance
             f"{YEAR} {self.kind} Template.xlsx"
         )
         self.sch_ref_df = get_sch_ref_df()
+        self.test = test
 
-        if test:
+        if self.test:
             root_dir = TEMP_PATH
         else:
             root_dir = 'Z:/'
@@ -44,67 +43,129 @@ class ExcelTracker:  # class used only for inheritance
         )
         self.sch_ref_df = self.sch_ref_df.set_index('Informal Name')
 
-    def deploy_one(self, school_informal, wb=None, close_after=True):
+    def deploy_all(self):
+        """ Distributes tracker for all school teams. Run only at the 
+        start of the year.
+        """
+        resp = input(f'This will overwrite {self.kind}s. Are you sure? y/n: ')
+        if resp.lower() != 'y':
+            return None
+
+        app = xw.App()
+        for school_informal in self.sch_ref_df.index:
+            wb = app.books.open(self.template_path)
+            self.deploy_one(school_informal, wb, warn=False)
+
+        app.kill()
+
+    def deploy_one(self, school_informal, wb=None, warn=True):
         """ Distributes tracker for just one school team.
 
         school_informal: school as named in the 'Informal Name' column of the 
                          school reference dataframe
-        close_after: optional, closes the workbook after deploying
         wb: optional template workbook (loads automatically by default)
         """
-        if not wb:
-            wb = xw.Book(self.template_path)
+        if warn:
+            resp = input(f'This will overwrite {self.kind}s. '
+                          'Are you sure? y/n: ')
+            if resp.lower() != 'y':
+                return None
 
         write_path = self.sch_ref_df.loc[school_informal, 'tracker_path']
-        if not write_path.parent.exists():
-            write_path.parent.mkdir(parents=True)
+        logger.info(f"Deploying {write_path.stem}")
+        
+        if not wb:
+            wb = xw.Book(self.template_path)
 
         sheet_names = [x.name for x in wb.sheets]
 
         title = write_path.stem
-        sht = wb.sheets['Tracker']
+        sht = wb.sheets[0]
         sht.range('A1').clear_contents()
         sht.range('A1').value = title
 
         if 'ACM Validation' in sheet_names:
             self.update_one_acm_validation_sheet(school_informal, wb,
-                                                 close_after=False)
+                                                 save_and_close=False)
         if 'Student Validation' in sheet_names:
             self.update_one_stdnt_validation_sheet(school_informal, wb,
-                                                 close_after=False)
+                                                   save_and_close=False)
 
-        try:
-            wb.save(write_path)
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception as e:
-            print(f"Save failed {school_informal}: {e}")
-            pass
-    
-        if close_after:
-            wb.close()
+        if not write_path.parent.exists() and self.test:
+            write_path.parent.mkdir(parents=True)
 
-    def deploy_all(self):
-        """ Distributes tracker for all school teams. Run only at the 
-        start of the year.
-        """
-        app = xw.App()
-        wb = app.books.open(self.template_path)
-
-        for school_informal in self.sch_ref_df.index:
-            self.deploy_one(school_informal, wb, close_after=False)
-
-        wb.close()
-        app.kill()
+        wb_save_and_close(wb, write_path)
 
     def update_one_acm_validation_sheet(self, school_informal: str, wb=None, 
-                                        close_after=True):
+                                        save_and_close=True):
+        if not wb:
+            wb_path = self.sch_ref_df.loc[school_informal, 'tracker_path']
+            wb = xw.Book(wb_path)
+
+        staff_df = self._get_staff_df(school_informal)
+
+        sht = wb.sheets['ACM Validation']
+        sht.clear_contents()
+        sht.range('A1').options(index=False, header=False).value = staff_df
+
+        if save_and_close:
+            wb_save_and_close(wb, wb_path)
+
+    def update_one_stdnt_validation_sheet(self, school_informal: str, wb=None, 
+                                          save_and_close=True):
         if not wb:
             wb_path = self.sch_ref_df.loc[school_informal, 'tracker_path']
             wb = xw.Book(wb_path)
 
         school_formal = self.sch_ref_df.loc[school_informal, 'School']
-       
+        
+        if self.kind == 'Attendance Tracker':
+            sections_of_interest = 'Coaching: Attendance'
+        else:
+            sections_of_interest = ''
+
+        stdnt_df = cysh.get_student_section_staff_df(
+            schools=[school_formal], sections_of_interest=sections_of_interest
+        )
+        stdnt_df = stdnt_df.sort_values('Student_Name__c')
+
+        sht = wb.sheets['Student Validation']
+        sht.clear_contents()
+        sht.range('A1').options(index=False, header=False).value = \
+            stdnt_df[['Student_Name__c', 'Student__c']]
+
+        if save_and_close:
+            wb_save_and_close(wb, wb_path)
+
+    def update_all_acm_stdnt_validation_sheets(self):
+        """ Iterates through trackers and updates the ACM and Student names for
+        dropdown validations.
+        """
+        app = xw.App()
+        # app.display_alerts = False        
+        for school_informal, row in self.sch_ref_df.iterrows():
+            wb_path = row['tracker_path']
+            logger.info(f'Updating {wb_path.stem}')
+
+            wb = app.books.open(wb_path)
+
+            sheet_names = [x.name for x in wb.sheets]
+
+            if 'ACM Validation' in sheet_names:
+                self.update_one_acm_validation_sheet(
+                    school_informal, wb, save_and_close=False)
+
+            if 'Student Validation' in sheet_names:
+                self.update_one_stdnt_validation_sheet(
+                    school_informal, wb, save_and_close=False)
+
+            wb_save_and_close(wb, wb_path)
+
+        app.kill()
+
+    def _get_staff_df(self, school_informal):
+        school_formal = self.sch_ref_df.loc[school_informal, 'School']
+
         roles = ['Corps Member', 'Second Year Corps Member', 
                  'Senior Corps Team Leader']
         staff_df = cysh.get_staff_df(schools=[school_formal], roles=roles)
@@ -119,76 +180,7 @@ class ExcelTracker:  # class used only for inheritance
         staff_df = staff_df[['Individual__c', 'First_Name_Staff__c', 
                              'Staff__c_Name']]
 
-        sht = wb.sheets['ACM Validation']
-        sht.clear_contents()
-        sht.range('A1').options(index=False, header=False).value = staff_df
-
-        if close_after:
-            wb.close()
-
         return staff_df
-
-    def update_one_stdnt_validation_sheet(self, school_informal: str, wb=None, 
-                                          close_after=True):
-        if not wb:
-            wb_path = self.sch_ref_df.loc[school_informal, 'tracker_path']
-            wb = xw.Book(wb_path)
-
-        school_formal = self.sch_ref_df.loc[school_informal, 'School']
-        
-        if self.kind == 'Attendance Tracker':
-            sections_of_interest = 'Coaching: Attendance'
-        else:
-            sections_of_interest = ''
-
-        stdnt_df = cysh.get_student_section_staff_df(  # TODO: accept schools
-            schools=[school_formal], sections_of_interest=sections_of_interest
-        )
-        stdnt_df = stdnt_df.sort_values('Student_Name__c')
-
-        sht = wb.sheets['Student Validation']
-        sht.clear_contents()
-        (sht.range('A1')
-            .options(index=False, header=False)
-            .value) = stdnt_df[['Student_Name__c', 'Student__c']]
-
-        if close_after:
-            wb.close()
-
-    def update_all_acm_stdnt_validation_sheets(self):
-        """
-        Iterates through trackers and updates the ACM and Student names for 
-        dropdown validations.
-        """
-        app = xw.App()
-        # app.display_alerts = False        
-        for school_informal, row in self.sch_ref_df.iterrows():
-            xlsx_path = row['tracker_path']
-
-            try:
-                wb = app.books.open(xlsx_path)
-
-                sheet_names = [x.name for x in wb.sheets]
-                if 'ACM Validation' in sheet_names:
-                    self.update_one_acm_validation_sheet(school_informal, wb,
-                                                         close_after=False)
-                if 'Student Validation' in sheet_names:
-                    self.update_one_stdnt_validation_sheet(school_informal, wb,
-                                                           close_after=False)
-
-                wb.save(xlsx_path)
-            except (KeyboardInterrupt, SystemExit):
-                raise
-            except Exception:
-                print(f"Failed to process {xlsx_path.name}:")
-                traceback.print_exc()
-            finally:
-                if len(app.books) > 1:
-                    app.books[-1].close()
-
-        app.kill()
-
-        return None
 
 
 class AttendanceTracker(ExcelTracker):
@@ -200,104 +192,59 @@ class AttendanceTracker(ExcelTracker):
 
 class LeadershipTracker(ExcelTracker):
     def __init__(self, kind='Leadership Tracker', 
-                 folder='Team Leadership Documents', 
+                 folder='Leadership Team Documents', 
                  test=False):
         super().__init__(kind=kind, folder=folder, test=test)
-
-
-# class InterventionTracker(ExcelTracker):
-#     def __init__(self, kind='Intervention Tracker', 
-#                  folder='Team Documents', 
-#                  test=False):
-#         super().__init__(kind=kind, folder=folder, test=test)
 
 
 class CoachingLog(ExcelTracker):
-    def __init__(self, kind='Coaching Log', folder='Team Leadership Documents', 
+    def __init__(self, kind='Coaching Log',
+                 folder='Leadership Team Documents',
                  test=False):
         super().__init__(kind=kind, folder=folder, test=test)
 
-    def deploy_one(self, school_informal, wb=None, close_after=True):
+    def update_one_acm_validation_sheet(self, school_informal: str, wb=None, 
+                                        save_and_close=True):
         if not wb:
-            wb = xw.Book(self.template_path)
+            wb_path = self.sch_ref_df.loc[school_informal, 'tracker_path']
+            wb = xw.Book(wb_path)
 
-        write_path = self.sch_ref_df.loc[school_informal, 'tracker_path']
-        if not write_path.parent.exists():
-            write_path.parent.mkdir(parents=True)
+        staff_df = self._get_staff_df(school_informal)
 
-        title = write_path.stem
-        sht = wb.sheets['Dev Tracker']
-        sht.range('A1,A5:L104').clear_contents()
-        sht.range('A1').value = title
+        sht = wb.sheets['ACM Validation']
+        sht.clear_contents()
+        sht.range('A1').options(index=False, header=False).value = staff_df
 
-        staff_df = self.update_one_acm_validation_sheet(
-            school_informal, wb, close_after=False)
-
-        pos = 1
-        acm_sheets = []
-        for _, row in staff_df.iterrows():
-            sht = wb.sheets[f'ACM{pos}']
-            sht.name = row['First_Name_Staff__c']
-            sht.range('A1').value = row['Staff__c_Name']
-            acm_sheets.append(sht.name)
-            pos += 1
-
-        try:
-            wb.save(write_path)
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except Exception as e:
-            print(f"Save failed {school_informal}: {e}")
-            pass
-
-        # Reset Sheets
-        pos = 1
-        for acm_sheet in acm_sheets:
-            wb.sheets[acm_sheet].name = f'ACM{pos}'
-            pos += 1
-
-        if close_after:
-            wb.close()
-
-    def deploy_all(self):
-        """ Distributes tracker for all school teams. Run only at the 
-        start of the year.
-        """
-        app = xw.App()
-        wb = app.books.open(self.template_path)
-        self.duplicate_acm_sheets(wb)
-        self.fill_acm_rollup_sheet(wb)
-
-        for school_informal in self.sch_ref_df.index:
-            self.deploy_one(school_informal, wb, close_after=False)
-
-        wb.close()
-        app.kill()
-
-    @staticmethod
-    def duplicate_acm_sheets(wb):
-        wb.sheets['Dev Tracker'].range('A1,A5:L104').clear_contents()
-
-        # Create ACM Copies
-        sht = wb.sheets['ACM1']
+        sht = wb.sheets['ACM Template']
         sht.range('A1,A3:J300').clear_contents()
+        sht.api.Visible = False
 
-        for x in range(2,11):
-            sht.api.Copy(Before=wb.sheets['Dev Map'].api)
-            wb.sheets['ACM1 (2)'].name = f'ACM{x}'
+        sheet_names_lower = [x.name.lower() for x in wb.sheets]
 
-        return None
+        for i, r in staff_df.iterrows():
+            if r['First_Name_Staff__c'].lower() not in sheet_names_lower:
+                sht.api.Copy(Before=wb.sheets['Dev Map'].api)
+                acm_sheet = wb.sheets['ACM Template (2)']
+                acm_sheet.name = r['First_Name_Staff__c']
+                acm_sheet.range('A1').value = r['Staff__c_Name']
+                acm_sheet.api.Visible = True
+
+        self._fill_acm_rollup_sheet(wb)
+
+        if save_and_close:
+            wb_save_and_close(wb, wb_path)
 
     @staticmethod
-    def fill_acm_rollup_sheet(wb):
+    def _fill_acm_rollup_sheet(wb):
         sht = wb.sheets['ACM Rollup']
         sht.range('A:N').clear_contents()
 
-        cols = ['Individual__c', 'ACM', 'Date', 'Role', 'Coaching Cycle', 
-                'Subject', 'Focus', 'Strategy/Skill', 'Notes', 'Action Steps', 
-                'Completed?', 'Followed Up']
         # fill headers
-        sht.range('A1').value = cols
+        sht.range('A1').value = [
+            'Individual__c', 'ACM', 'Date', 'Role', 'Coaching Cycle',
+            'Subject', 'Focus', 'Strategy/Skill', 'Notes', 'Action Steps',
+            'Completed?', 'Followed Up'
+        ]
         # fill column A
         sht.range('A2:A3002').value = (
             "=INDEX('ACM Validation'!$A:$A, "
@@ -305,8 +252,8 @@ class CoachingLog(ExcelTracker):
         )
         # fill columns B:L
         skip_sheets = set(
-            ['Dev Tracker', 'Dev Map', 'ACM Validation', 'ACM Rollup', 
-             'Calendar Validation', 'Log Validation'] + 
+            ['Dev Tracker', 'Dev Map', 'ACM Template', 'ACM Validation', 
+             'ACM Rollup', 'Calendar Validation', 'Log Validation'] + 
             [f'Sheet{_}' for _ in range(1,9)]
         )
         acm_sheets = [x.name for x in wb.sheets if x.name not in skip_sheets]
@@ -318,30 +265,19 @@ class CoachingLog(ExcelTracker):
             sht.range(f'C{row}:L{row + 300}').value = f"='{sheet_name}'!A3"
             row += 300
 
-        return None
 
+def wb_save_and_close(wb, write_path):
+    wb.sheets[0].activate()  # sets focus on first sheet of document
 
-def unprotect_sheets(resource_type: str, containing_folder: str,
-                     sheet_name: str):
-    """Unprotects a given sheet in a given excel resource across all schools"""
-    import win32com.client
-
-    app = win32com.client.Dispatch('Excel.Application')
-    app.visible = True
-    app.DisplayAlerts = False
-    
-    sch_ref_df = get_sch_ref_df()
-    for _, row in sch_ref_df.iterrows():
-        xlsx_path = (f"Z:/{row['Informal Name']} {containing_folder}/"
-                     f"{resource_type} - {row['Informal Name']}.xlsx")
-        wb = app.workbooks.open(xlsx_path)
-        wb.Sheets(sheet_name).Unprotect()
-        wb.Close(True, xlsx_path)
-
-    app.Quit()
-
-    return None
-
+    try:
+        wb.save(write_path)
+    except (KeyboardInterrupt, SystemExit):
+        raise
+    except Exception as e:
+        logger.error(f"Failed to save {write_path.name}: {e}")
+        traceback.print_exc()
+    finally:
+        wb.close()
 
 # def update_coach_log_validation(sheet_name='Log Validation',
 #                                 resource_type='SY19 Coaching Log',

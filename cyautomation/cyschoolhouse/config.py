@@ -56,14 +56,14 @@ SCH_REF_PATH = ('Z:/ChiPrivate/Chicago Data and Evaluation/'
 if not os.path.exists(TEMP_PATH):
     os.mkdir(TEMP_PATH)
 
-def set_logger(name):
+def set_logger(name, filename='log.log'):
     logger = logging.getLogger(name)
     logger.setLevel('DEBUG')
 
     format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     formatter = logging.Formatter(format)
 
-    file_log_handler = logging.FileHandler(str(Path(LOG_PATH) / f"{name}.log"))
+    file_log_handler = logging.FileHandler(str(Path(LOG_PATH) / filename))
     file_log_handler.setFormatter(formatter)
     logger.addHandler(file_log_handler)
 

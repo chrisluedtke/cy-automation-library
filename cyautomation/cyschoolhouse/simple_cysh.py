@@ -5,7 +5,11 @@ import pandas as pd
 from simple_salesforce import (Salesforce, SalesforceExpiredSession,
                                SalesforceMalformedRequest)
 
-from .config import SF_PASS, SF_TOKN, SF_URL, SF_USER, YEAR, get_sch_ref_df
+from .config import (set_logger, SF_PASS, SF_TOKN, SF_URL, SF_USER, YEAR,
+                     get_sch_ref_df)
+
+
+logger = set_logger(name=Path(__file__).stem)
 
 
 def init_sf_session():
@@ -17,7 +21,6 @@ def init_sf_session():
     )
     return sf
 
-sf = init_sf_session()
 
 def check_sf_session(func):
     @functools.wraps(func)
@@ -30,6 +33,7 @@ def check_sf_session(func):
             return func(*args, **kwargs)
 
     return wrapper
+
 
 @check_sf_session
 def get_object_fields(object_name):
@@ -44,6 +48,7 @@ def get_object_fields(object_name):
     fields.remove('attributes')
 
     return fields
+
 
 @check_sf_session
 def get_object_df(object_name, field_list=None, where=None, rename_id=False,
@@ -80,10 +85,10 @@ def get_object_df(object_name, field_list=None, where=None, rename_id=False,
             df = pd.DataFrame(query_return['records'])
             df = df[field_list]
         else:
-            error = f'Warning: no records found for query: {querystring}'
+            error = f'No records found for query: {querystring}'
 
         if error:
-            print(error)
+            logger.error(error)
             df = pd.DataFrame(columns=field_list)
 
     if rename_id:
@@ -203,3 +208,6 @@ def in_str(ls):
            ls[i] = ls[i].replace("'", "*")
 
     return f"({str(ls)[1:-1]})".replace("*", "\\'")
+
+
+sf = init_sf_session()
