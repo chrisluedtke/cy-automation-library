@@ -6,77 +6,69 @@ from .config import get_sch_ref_df
 from . import simple_cysh as cysh
 
 
-sch_ref_df = get_sch_ref_df()
-
+ACM_DEPLOY_PATH = r'Z:/Impact Analytics Team/SY20/SY20 ACM Deployment.xlsx'
 
 def academic_sections_to_create(start_date, end_date):
-    """
-    Gather ACM deployment docs to determine which 'Tutoring: Math'
-    and 'Tutoring: Literacy' sections to make. Store sections to make in a 
+    """Gathers ACM deployment docs to determine which 'Tutoring: Math'
+    and 'Tutoring: Literacy' sections to make. Stores sections to make in a 
     spreadsheet at 'input_files/section-creator-input.xlsx'.
     """
-    xl = pd.ExcelFile(r'Z:/Impact Analytics Team/SY19 ACM Deployment.xlsx')
-
-    df_list = []
-    for sheet in xl.sheet_names:
-        if sheet != 'Sample Deployment':
-            df = xl.parse(sheet).iloc[:,0:6]
-            df['Informal Name'] = sheet
-            df_list.append(df)
-            del df
-    acm_dep_df = pd.concat(df_list)
+    acm_dep_df = pd.read_excel(ACM_DEPLOY_PATH)
 
     acm_dep_df.rename(columns={
-        'ACM Name':'ACM',
-        'Related IA (ELA/Math)':'SectionName'
+        'ACM Name (First Last)': 'Staff__c_Name',
+        'Related IA (ELA/Math)': 'SectionName',
+        'ACM ID': 'Staff__c'
     }, inplace=True)
 
-    acm_dep_df = acm_dep_df.loc[~acm_dep_df['ACM'].isnull() &
-                                ~acm_dep_df['SectionName'].isnull()]
+    acm_dep_df = acm_dep_df.loc[acm_dep_df['Staff__c_Name'].notna()]
 
-    acm_dep_df['ACM'] = acm_dep_df['ACM'].str.strip()
+    acm_dep_df['Staff__c_Name'] = acm_dep_df['Staff__c_Name'].str.strip()
     acm_dep_df['SectionName'] = acm_dep_df['SectionName'].str.strip().str.upper()
 
-    acm_dep_df.loc[acm_dep_df['SectionName'].str.contains('MATH'), 'SectionName_MATH'] = 'Tutoring: Math'
-    acm_dep_df.loc[acm_dep_df['SectionName'].str.contains('ELA'), 'SectionName_ELA'] = 'Tutoring: Literacy'
-
-    acm_dep_df = acm_dep_df.fillna('')
-
-    acm_dep_df = acm_dep_df[['ACM', 'Informal Name', 'SectionName_MATH', 'SectionName_ELA']].groupby(['ACM', 'Informal Name']).agg(lambda x: ''.join(x.unique()))
-    acm_dep_df.reset_index(inplace=True)
+    acm_dep_df.loc[acm_dep_df['SectionName'].str.contains('MATH'), 
+                   'SectionName_MATH'] = 'Tutoring: Math'
+    acm_dep_df.loc[acm_dep_df['SectionName'].str.contains('ELA'), 
+                   'SectionName_ELA'] = 'Tutoring: Literacy'
 
     acm_dep_df = pd.melt(
         acm_dep_df,
-        id_vars=['ACM', 'Informal Name'],
+        id_vars=['Staff__c_Name', 'Staff__c'],
         value_vars=['SectionName_MATH', 'SectionName_ELA'],
-        value_name='SectionName'
+        value_name='Program__c_Name'
     )
-    acm_dep_df = acm_dep_df.loc[~acm_dep_df['SectionName'].isnull() & (acm_dep_df['SectionName'] != '')]
-    acm_dep_df = acm_dep_df.sort_values('ACM')
-    acm_dep_df['key'] = acm_dep_df['ACM'] + acm_dep_df['SectionName']
+    acm_dep_df = acm_dep_df.loc[acm_dep_df['Program__c_Name'].notna()]
 
-    section_df = cysh.get_section_df(sections_of_interest=['Tutoring: Literacy', 'Tutoring: Math'])
+    # Filter out existing sections
+    acm_dep_df['key'] = (acm_dep_df['Staff__c'] + '_' +  
+                         acm_dep_df['Program__c_Name'])
+
+    sections_of_interest=['Tutoring: Literacy', 'Tutoring: Math']
+    section_df = cysh.get_section_df(sections_of_interest)
+    section_df['key'] = (section_df['Intervention_Primary_Staff__c'] + '_' +
+                         section_df['Program__c_Name'])
+
+    acm_dep_df = acm_dep_df.loc[~acm_dep_df['key'].isin(section_df['key'])]
+
+    # inner-join on staff name to merge in School
     staff_df = cysh.get_staff_df()
-    section_df = section_df.merge(staff_df, how='left', left_on='Intervention_Primary_Staff__c', right_on='Staff__c')
-    section_df['key'] = section_df['Staff__c_Name'] + section_df['Program__c_Name']
+    acm_dep_df = acm_dep_df.merge(staff_df[['Staff__c_Name', 'School']],
+                                  on='Staff__c_Name')
 
-    acm_dep_df = acm_dep_df.loc[
-        acm_dep_df['ACM'].isin(staff_df['Staff__c_Name']) &
-        ~acm_dep_df['key'].isin(section_df['key'])
-    ]
+    # Write out
+    acm_dep_df = format_df(acm_dep_df, start_date=start_date, 
+                           end_date=end_date, 
+                           in_sch_ext_lrn='In School', 
+                           target_dosage=900)
 
-    df = acm_dep_df.merge(sch_ref_df[['School', 'Informal Name']],
-                          how='left', on='Informal Name')
-
-    df = format_and_write_xl(df, start_date=start_date, end_date=end_date)
-
-    return df
+    return acm_dep_df
 
 
-def non_CP_sections_to_create(start_date, end_date, sections_of_interest=['Coaching: Attendance', 'SEL Check In Check Out']):
+def non_CP_sections_to_create(start_date, end_date):
+    """ Produce table of sections to create, with the assumption that all 
+    'Corps Member' roles should have 1 of each section.
     """
-    Produce table of sections to create, with the assumption that all 'Corps Member' roles should have 1 of each section.
-    """
+    sections_of_interest = ['Coaching: Attendance', 'SEL Check In Check Out']
     section_df = cysh.get_section_df(sections_of_interest)
     section_df['key'] = section_df['Intervention_Primary_Staff__c'] + section_df['Program__c_Name']
 
@@ -98,13 +90,13 @@ def non_CP_sections_to_create(start_date, end_date, sections_of_interest=['Coach
 
     df = df.rename(columns={'Staff__c_Name':'ACM'})
 
-    df = format_and_write_xl(df, start_date=start_date, end_date=end_date)
+    df = format_df(df, start_date=start_date, end_date=end_date)
 
     return df
 
 
 def MIRI_sections_to_create(start_date, end_date):
-    """
+    """ 
     Produce table of ACM 'Math Inventory' and 'Reading Inventory' sections to 
     make, only relevant to high schools (in Chicago)
     """
@@ -122,17 +114,8 @@ def MIRI_sections_to_create(start_date, end_date):
     section_df = section_df.merge(program_df, how='left', on='Program__c')
     section_df = section_df.merge(staff_df, how='left', left_on='Intervention_Primary_Staff__c', right_on='Id')
 
-    # TODO: don't store data like this here, put it in the school reference
-    highschools = [
-        'Tilden Career Community Academy High School',
-        'Gage Park High School',
-        'Collins Academy High School',
-        'Schurz High School',
-        'Sullivan High School',
-        'Chicago Academy High School',
-        'Roberto Clemente Community Academy',
-        'Wendell Phillips Academy',
-    ]
+    sch_ref_df = get_sch_ref_df()
+    highschools = sch_ref_df.loc[sch_ref_df['GradeLevel']=="High", "School"]
 
     section_df = section_df.loc[section_df['School'].isin(highschools)]
 
@@ -148,35 +131,29 @@ def MIRI_sections_to_create(start_date, end_date):
     })
 
     for df in [section_df, miri_section_df]:
-        df['key'] = df['Staff__c_Name'] + df['Program__c_Name']
+        df['key'] = df['Staff__c_Name'] + '_' + df['Program__c_Name']
 
-    df = (section_df.loc[~section_df['key'].isin(miri_section_df['key'])]
-                    .rename(columns={
-                        'Staff__c_Name':'ACM',
-                        'Program__c_Name':'SectionName'
-                    }))
+    df = section_df.loc[~section_df['key'].isin(miri_section_df['key'])]
 
-    df = format_and_write_xl(df, start_date=start_date, end_date=end_date)
+    df = format_df(df, start_date=start_date, end_date=end_date)
 
     return df
 
 
-def format_and_write_xl(df, start_date='09/04/2018', end_date='06/07/2019',
-                        in_sch_ext_lrn='In School', target_dosage=0):
+def format_df(df, start_date, end_date, in_sch_ext_lrn='In School', 
+              target_dosage=0):
+    assert in_sch_ext_lrn in {'In School', 'Extended Learning', 'Curriculum'}
 
-    df = pd.DataFrame({
-        'School':df.School,
-        'ACM':df.ACM,
-        'SectionName':df.SectionName,
-        'In_School_or_Extended_Learning':in_sch_ext_lrn,
-        'Start_Date':start_date,
-        'End_Date':end_date,
-        'Target_Dosage':target_dosage
+    df = df.rename(columns={
+        'Staff__c_Name': 'ACM',
+        'Program__c_Name': 'SectionName'
     })
 
-    write_path = os.path.join(os.path.dirname(__file__),
-                              'input_files/section-creator-input.xlsx')
-    df.to_excel(write_path, index=False)
+    df = df[['School', 'ACM', 'SectionName']]
+    df['In_School_or_Extended_Learning'] = in_sch_ext_lrn
+    df['Start_Date'] = start_date
+    df['End_Date'] = end_date
+    df['Target_Dosage'] = target_dosage
 
     return df
 

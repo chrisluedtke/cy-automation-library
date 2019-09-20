@@ -13,3 +13,4 @@ cyautomation/cyschoolhouse/temp/*
 cyautomation/cyschoolhouse/.vscode/settings.json
 cyautomation/sftp/.ipynb_checkpoints/*
 .vscode/*
+*cookies.pkl
