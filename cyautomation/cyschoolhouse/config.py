@@ -20,6 +20,11 @@ __all__ = [
     'get_sch_ref_df',
 ]
 
+assert Path('Z:').exists(), ("Failed to connect to Z: drive. You must map "
+                             "cyconnect (Sharepoint) to this drive location. "
+                             "You may need to login to cyconnect on Internet "
+                             "Explorer. See the README.md.")
+
 # configuration from .env
 YEAR = os.environ['YEAR']
 USER_SITE = os.environ['USER_SITE']
