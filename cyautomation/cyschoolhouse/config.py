@@ -5,7 +5,7 @@ from pathlib import Path
 import pandas as pd
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(Path(__file__).parent / '.env')
 
 __all__ = [
     'USER_SITE',
