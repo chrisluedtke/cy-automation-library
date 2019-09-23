@@ -10,7 +10,6 @@ from . import simple_cysh as cysh
 
 
 logger = set_logger(name=Path(__file__).stem)
-sch_ref_df = get_sch_ref_df()
 
 
 def get_section_enrollment_table(sections_of_interest):
@@ -144,6 +143,7 @@ def update_service_trackers():
         for _ in xw.apps:
             _.kill()
 
+        sch_ref_df = get_sch_ref_df()
         school_informal_name = sch_ref_df.loc[
             sch_ref_df['School'] == school, 'Informal Name'
             ].values[0]
