@@ -5,7 +5,7 @@ from .simple_cysh import (get_object_df, get_object_fields, get_section_df,
                           get_staff_df, get_student_section_staff_df,
                           init_sf_session, object_reference, sf)
 
-if USER_SITE == 'Chicago':
+if USER_SITE.lower() == 'chicago':
     from . import ia_assignment_chi
     from . import section_creation_chi
     from . import servicetrackers

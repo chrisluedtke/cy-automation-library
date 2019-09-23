@@ -111,6 +111,8 @@ def create_all_sections(data=pd.DataFrame(), driver=None):
     if data.empty:
         data = pd.read_excel(os.path.join(os.path.dirname(__file__), 
                              'input_files/section-creator-input.xlsx'))
+
+    logger.info(f'Creating {len(data)} sections')
     
     data['Start_Date'] = pd.to_datetime(data['Start_Date']).dt.strftime('%m/%d/%Y')
     data['End_Date'] = pd.to_datetime(data['End_Date']).dt.strftime('%m/%d/%Y')
