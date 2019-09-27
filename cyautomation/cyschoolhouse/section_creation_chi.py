@@ -9,9 +9,8 @@ from . import simple_cysh as cysh
 ACM_DEPLOY_PATH = r'Z:/Impact Analytics Team/SY20/SY20 ACM Deployment.xlsx'
 
 def academic_sections_to_create(start_date, end_date):
-    """Gathers ACM deployment docs to determine which 'Tutoring: Math'
-    and 'Tutoring: Literacy' sections to make. Stores sections to make in a 
-    spreadsheet at 'input_files/section-creator-input.xlsx'.
+    """ Reads ACM deployment spreadsheet to determine which 'Tutoring: Math'
+    and 'Tutoring: Literacy' sections to make.
     """
     acm_dep_df = pd.read_excel(ACM_DEPLOY_PATH)
 
@@ -55,7 +54,6 @@ def academic_sections_to_create(start_date, end_date):
     acm_dep_df = acm_dep_df.merge(staff_df[['Staff__c_Name', 'School']],
                                   on='Staff__c_Name')
 
-    # Write out
     acm_dep_df = format_df(acm_dep_df, start_date=start_date, 
                            end_date=end_date, 
                            in_sch_ext_lrn='In School', 
@@ -64,76 +62,69 @@ def academic_sections_to_create(start_date, end_date):
     return acm_dep_df
 
 
-def non_CP_sections_to_create(start_date, end_date):
-    """ Produce table of sections to create, with the assumption that all 
-    'Corps Member' roles should have 1 of each section.
+def non_academic_sections_to_create(start_date, end_date):
+    """ Produces table of sections to create, with the assumption that all 
+    'Corps Member' roles should have 1 of each non-academic section.
     """
     sections_of_interest = ['Coaching: Attendance', 'SEL Check In Check Out']
+
+    # Assign all Corps Member staff to all sections of interest
+    staff_df = cysh.get_staff_df()
+    staff_df = staff_df.loc[
+        staff_df['Role__c'].str.contains('Corps Member')==True
+    ]
+    sections_to_make = pd.DataFrame({'SectionName': sections_of_interest})
+    staff_df = (staff_df.assign(key=1)
+                        .merge(sections_to_make.assign(key=1), on='key'))
+
+    # Filter out existing sections
+    staff_df['key'] = staff_df['Staff__c'] + staff_df['SectionName']
+
     section_df = cysh.get_section_df(sections_of_interest)
-    section_df['key'] = section_df['Intervention_Primary_Staff__c'] + section_df['Program__c_Name']
+    section_df['key'] = (section_df['Intervention_Primary_Staff__c'] + 
+                         section_df['Program__c_Name'])
 
-    staff_df = cysh.get_object_df('Staff__c', ['Id', 'Name', 'Role__c', 'Organization__c'], where="Site__c='Chicago'", rename_name=True)
-    school_df = cysh.get_object_df('Account', ['Id', 'Name'])
-    school_df.rename(columns={'Id':'School__c', 'Name':'School'}, inplace=True)
-    staff_df = staff_df.merge(school_df, how='left', left_on='Organization__c', right_on='School__c')
+    staff_df = staff_df.loc[~staff_df['key'].isin(section_df['key'])]
 
-    acm_df = staff_df.loc[staff_df['Role__c'].str.contains('Corps Member')==True].copy()
-    acm_df['key'] = 1
+    staff_df = format_df(staff_df, start_date=start_date, end_date=end_date)
 
-    section_deployment = pd.DataFrame.from_dict({'SectionName': sections_of_interest})
-    section_deployment['key'] = 1
-
-    acm_df = acm_df.merge(section_deployment, on='key')
-    acm_df['key'] = acm_df['Id'] + acm_df['SectionName']
-
-    df = acm_df.loc[~acm_df['key'].isin(section_df['key'])]
-
-    df = df.rename(columns={'Staff__c_Name':'ACM'})
-
-    df = format_df(df, start_date=start_date, end_date=end_date)
-
-    return df
+    return staff_df
 
 
 def MIRI_sections_to_create(start_date, end_date):
-    """ 
-    Produce table of ACM 'Math Inventory' and 'Reading Inventory' sections to 
-    make, only relevant to high schools (in Chicago)
+    """ Produces table of ACM 'Math Inventory' and 'Reading Inventory' sections
+    to make. Only relevant to high schools.
     """
-    program_df = cysh.get_object_df('Program__c', ['Id', 'Name'], rename_id=True, rename_name=True)
+    # Cross reference course performane and MIRI sections to determine which
+    # MIRI sections to make
+    cp_sections = ['Tutoring: Math', 'Tutoring: Literacy']
+    miri_secitons = ['Math Inventory', 'Reading Inventory']
 
-    school_df = cysh.get_object_df('Account', ['Id', 'Name'])
-    school_df.rename(columns={'Id':'School__c', 'Name':'School'}, inplace=True)
+    sect_df = cysh.get_section_df(cp_sections + miri_secitons)
 
-    staff_df = cysh.get_object_df('Staff__c', ['Id', 'Name'], where="Site__c='Chicago'", rename_name=True)
-
-    section_cols = ['Id', 'Name', 'Intervention_Primary_Staff__c', 'School__c',
-                    'Program__c']
-    section_df = cysh.get_object_df('Section__c', section_cols, rename_id=True, rename_name=True)
-    section_df = section_df.merge(school_df, how='left', on='School__c')
-    section_df = section_df.merge(program_df, how='left', on='Program__c')
-    section_df = section_df.merge(staff_df, how='left', left_on='Intervention_Primary_Staff__c', right_on='Id')
-
-    sch_ref_df = get_sch_ref_df()
-    highschools = sch_ref_df.loc[sch_ref_df['GradeLevel']=="High", "School"]
-
-    section_df = section_df.loc[section_df['School'].isin(highschools)]
-
-    condition = section_df['Program__c_Name'].str.contains('Inventory')==True
-    miri_section_df = section_df.loc[condition]
-
-    condition = section_df['Program__c_Name'].str.contains('Tutoring')==True
-    section_df = section_df.loc[condition]
-
-    section_df['Program__c_Name'] = section_df['Program__c_Name'].map({
-        'Tutoring: Literacy':'Reading Inventory',
-        'Tutoring: Math':'Math Inventory'
+    cp_sect_df = sect_df.loc[sect_df['Program__c_Name'].isin(cp_sections)]
+    cp_sect_df['Program__c_Name'] = cp_sect_df['Program__c_Name'].map({
+        'Tutoring: Literacy': 'Reading Inventory',
+        'Tutoring: Math': 'Math Inventory'
     })
 
-    for df in [section_df, miri_section_df]:
-        df['key'] = df['Staff__c_Name'] + '_' + df['Program__c_Name']
+    miri_sect_df = sect_df.loc[sect_df['Program__c_Name'].isin(miri_secitons)]
 
-    df = section_df.loc[~section_df['key'].isin(miri_section_df['key'])]
+    for df in [cp_sect_df, miri_sect_df]:
+        df['key'] = df['Intervention_Primary_Staff__c'] + df['Program__c_Name']
+
+    df = cp_sect_df.loc[~cp_sect_df['key'].isin(miri_sect_df['key'])]
+
+    # Merge in staff name and school
+    staff_df = cysh.get_staff_df()
+    df = df.merge(staff_df[['Staff__c', 'Staff__c_Name', 'School']], 
+                  how='left', left_on='Intervention_Primary_Staff__c', 
+                  right_on='Staff__c')
+
+    # Filter to only high schools
+    sch_ref_df = get_sch_ref_df()
+    highschools = sch_ref_df.loc[sch_ref_df['GradeLevel']=="High", "School"]
+    df = df.loc[df['School'].isin(highschools)]
 
     df = format_df(df, start_date=start_date, end_date=end_date)
 
@@ -164,24 +155,31 @@ def deactivate_all_sections(section_type):
     a `50 Acts of Greatness` section is made, as the default section type selection.
     We don't provide this programming in Chicago, so we can safely deactivate all.
     """
-    section_cols = ['Id', 'Name', 'Intervention_Primary_Staff__c',
-                    'School__c', 'Program__c', 'Active__c']
-    section_df = cysh.get_object_df('Section__c', section_cols, rename_id=True, rename_name=True)
-    program_df = cysh.get_object_df('Program__c', ['Id', 'Name'], rename_id=True, rename_name=True)
+    section_df = cysh.get_object_df(
+        'Section__c', 
+        ['Id', 'Program__c', 'Active__c'], 
+        rename_id=True, 
+        rename_name=True
+    )
+    program_df = cysh.get_object_df(
+        'Program__c', 
+        ['Id', 'Name'], 
+        rename_id=True,
+        rename_name=True
+    )
+    section_df = section_df.merge(program_df, how='left', on='Program__c')
 
-    df = section_df.merge(program_df, how='left', on='Program__c')
-
-    df = df.loc[
-        (df['Program__c_Name']==section_type) &
+    section_df = section_df.loc[
+        (section_df['Program__c_Name']==section_type) &
         (section_df['Active__c']==True),
         'Section__c'
     ]
 
-    print(f"{len(df)} {section_type} sections to de-activate.")
+    print(f"{len(section_df)} {section_type} sections to de-activate.")
     user_input = input("Are you sure? (yes/y to continue): ").lower()
 
-    if user_input in ['yes', 'y']:
-        for section_id in df:
+    if user_input in {'yes', 'y'}:
+        for section_id in section_df:
             cysh.sf.Section__c.update(section_id, {'Active__c':False})
         return True
     else:
