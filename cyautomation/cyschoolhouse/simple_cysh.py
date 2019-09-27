@@ -101,7 +101,7 @@ def get_object_df(object_name, field_list=None, where=None, rename_id=False,
 
 def get_section_df(sections_of_interest):
     if type(sections_of_interest)==str:
-        sections_of_interest = list(sections_of_interest)
+        sections_of_interest = [sections_of_interest]
 
     program_df = get_object_df(
         'Program__c', ['Id', 'Name'],

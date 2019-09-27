@@ -29,10 +29,10 @@ def fix_T1T2ELT(sf=cysh.sf):
     print(f"Found {len(df)} T1, T2, or ELT labels that can be fixed")
 
     results = []
-    for index, row in df.iterrows():
+    for _, row in df.iterrows():
         result = sf.Intervention_Session__c.update(row.Intervention_Session__c,
                                                    {'Comments__c':row['Comments__c']})
-        results.append(results)
+        results.append(result)
 
     return results
 
