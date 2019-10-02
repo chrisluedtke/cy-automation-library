@@ -1,13 +1,5 @@
 from . import simple_cysh as cysh
 
-## Demo of how to pull student object
-#school_df = cysh.get_object_df('Account', ['Id', 'Name'])
-#student_df = cysh.get_object_df(
-    # 'Student__c',
-    # ['Id', 'Name', 'Local_Student_ID__c', 'School__c', 'External_Id__c'],
-    # where=f"School__c IN ({str(school_df['Id'].tolist())[1:-1]})")
-#
-#df = cysh.get_object_df('Student_Program__c')
 
 def enrollment_sync(source_section, destination_section, enrollment_start_date,
                     ACM_to_TL=False):
@@ -48,10 +40,14 @@ def enrollment_sync(source_section, destination_section, enrollment_start_date,
                                                   on='Section__c')
 
     # get students enrolled in source section
-    source_enrollment_df = student_section_df.loc[student_section_df['Program__c_Name'] == source_section].copy()
+    source_enrollment_df = student_section_df.loc[
+        student_section_df['Program__c_Name'] == source_section
+    ].copy()
 
     # get students enrolled in destination section
-    dest_enrollment_df = student_section_df.loc[student_section_df['Program__c_Name'] == destination_section].copy()
+    dest_enrollment_df = student_section_df.loc[
+        student_section_df['Program__c_Name'] == destination_section
+    ].copy()
 
     if ACM_to_TL == True:
         source_enrollment_df.loc[:,'key'] = source_enrollment_df[['Student__c', 'School']].astype(str).sum(axis=1)
