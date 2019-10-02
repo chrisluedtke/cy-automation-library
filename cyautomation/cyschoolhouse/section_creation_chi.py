@@ -104,7 +104,7 @@ def MIRI_sections_to_create(start_date, end_date):
     sect_df = cysh.get_section_df(cp_sections + miri_secitons)
 
     cp_sect_df = sect_df.loc[sect_df['Program__c_Name'].isin(cp_sections)]
-    cp_sect_df['Program__c_Name'] = cp_sect_df['Program__c_Name'].map({
+    cp_sect_df.loc[:, 'Program__c_Name'] = cp_sect_df['Program__c_Name'].map({
         'Tutoring: Literacy': 'Reading Inventory',
         'Tutoring: Math': 'Math Inventory'
     })
@@ -112,7 +112,8 @@ def MIRI_sections_to_create(start_date, end_date):
     miri_sect_df = sect_df.loc[sect_df['Program__c_Name'].isin(miri_secitons)]
 
     for df in [cp_sect_df, miri_sect_df]:
-        df['key'] = df['Intervention_Primary_Staff__c'] + df['Program__c_Name']
+        df.loc[:, 'key'] = (df['Intervention_Primary_Staff__c'] + '_' +
+                            df['Program__c_Name'])
 
     df = cp_sect_df.loc[~cp_sect_df['key'].isin(miri_sect_df['key'])]
 
