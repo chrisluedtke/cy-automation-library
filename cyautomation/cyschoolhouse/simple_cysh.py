@@ -191,6 +191,29 @@ def get_staff_df(schools=None, roles=None):
     return staff_df
 
 
+def get_student_df(schools=None):
+    """
+    Args:
+        - schools: List of schools as named in salesforce
+    """
+    where = f"Name IN {in_str(schools)}" if schools else None
+    school_df = get_object_df('Account', ['Id', 'Name'], where=where)
+    school_df = school_df.rename(columns={'Id': 'Organization__c',
+                                          'Name': 'School'})
+
+    student_df = get_object_df(
+        'Student__c', 
+        ['Id', 'Local_Student_ID__c', 'External_Id__c'],
+        where=f"School__c IN {in_str(school_df['Organization__c'])}", 
+        rename_name=True, 
+        rename_id=True
+    )
+
+    # student_df = student_df.merge(school_df, how='left', on='Organization__c')
+
+    return student_df
+
+
 @check_sf_session
 def object_reference():
     result = sf.describe()
