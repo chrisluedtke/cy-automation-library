@@ -14,11 +14,11 @@ def academic_sections_to_create(start_date, end_date):
     """
     acm_dep_df = pd.read_excel(ACM_DEPLOY_PATH)
 
-    acm_dep_df.rename(columns={
+    acm_dep_df = acm_dep_df.rename(columns={
         'ACM Name (First Last)': 'Staff__c_Name',
         'Related IA (ELA/Math)': 'SectionName',
         'ACM ID': 'Staff__c'
-    }, inplace=True)
+    })
 
     acm_dep_df = acm_dep_df.loc[acm_dep_df['Staff__c_Name'].notna()]
 
@@ -44,7 +44,7 @@ def academic_sections_to_create(start_date, end_date):
 
     sections_of_interest=['Tutoring: Literacy', 'Tutoring: Math']
     section_df = cysh.get_section_df(sections_of_interest)
-    section_df['key'] = (section_df['Intervention_Primary_Staff__c'] + '_' +
+    section_df['key'] = (section_df['Intervention_Primary_Staff__c'] + '_' + 
                          section_df['Program__c_Name'])
 
     acm_dep_df = acm_dep_df.loc[~acm_dep_df['key'].isin(section_df['key'])]
@@ -75,7 +75,8 @@ def non_academic_sections_to_create(start_date, end_date):
     ]
     sections_to_make = pd.DataFrame({'SectionName': sections_of_interest})
     staff_df = (staff_df.assign(key=1)
-                        .merge(sections_to_make.assign(key=1), on='key'))
+                        .merge(sections_to_make.assign(key=1), on='key')
+                        .drop(columns='key'))
 
     # Filter out existing sections
     staff_df['key'] = staff_df['Staff__c'] + staff_df['SectionName']
