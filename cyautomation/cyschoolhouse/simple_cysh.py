@@ -100,7 +100,7 @@ def get_object_df(object_name, field_list=None, where=None, rename_id=False,
 
 
 def get_section_df(sections_of_interest):
-    if type(sections_of_interest)==str:
+    if type(sections_of_interest) == str:
         sections_of_interest = [sections_of_interest]
 
     program_df = get_object_df(
@@ -123,6 +123,9 @@ def get_section_df(sections_of_interest):
 def get_student_section_staff_df(sections_of_interest, schools=None):
     if type(sections_of_interest) == str:
         sections_of_interest = [sections_of_interest]
+
+    if schools and type(schools) == str:
+        schools = [schools]
 
     # load salesforce tables
     program_df = get_object_df(
@@ -171,6 +174,12 @@ def get_staff_df(schools=None, roles=None):
     schools: List of schools as named in salesforce
     roles: List of roles as named in salesforce
     """
+    if schools and type(schools) == str:
+        schools = [schools]
+
+    if roles and type(roles) == str:
+        roles = [roles]
+
     where = f"Name IN {in_str(schools)}" if schools else None
     school_df = get_object_df('Account', ['Id', 'Name'], where=where)
     school_df = school_df.rename(columns={'Id': 'Organization__c',
@@ -196,6 +205,9 @@ def get_student_df(schools=None):
     Args:
         - schools: List of schools as named in salesforce
     """
+    if type(schools) == str:
+        schools = [schools]
+
     where = f"Name IN {in_str(schools)}" if schools else None
     school_df = get_object_df('Account', ['Id', 'Name'], where=where)
     school_df = school_df.rename(columns={'Id': 'Organization__c',
