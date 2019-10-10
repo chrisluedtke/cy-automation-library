@@ -9,7 +9,6 @@ from .simple_cysh import (get_object_df, get_object_fields, get_section_df,
 if USER_SITE.lower() == 'chicago':
     from . import ia_assignment_chi
     from . import section_creation_chi
-    from . import servicetrackers
     from . import tot_audit
-    from .tracker_mgmt import (AttendanceTracker, CoachingLog, 
-                               LeadershipTracker)
+    from .trackers import (AttendanceTracker, CoachingLog, 
+                           LeadershipTracker, WeeklyServiceTracker)
