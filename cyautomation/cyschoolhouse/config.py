@@ -54,12 +54,13 @@ OKTA_PASS = os.getenv('OKTA_PASS')
 INPUT_PATH = str(Path(__file__).parent / 'input_files')
 LOG_PATH = str(Path(__file__).parent / 'log')
 TEMP_PATH = str(Path(__file__).parent / 'temp')
-TEMPLATES_PATH = str(Path(__file__).parent / 'templates')
+TEMPLATES_PATH = f"Z:/ChiPrivate/Chicago Data and Evaluation/{YEAR}/Templates/"
 SCH_REF_PATH = ('Z:/ChiPrivate/Chicago Data and Evaluation/'
                 f'{YEAR}/{YEAR} School Reference.xlsx')
 
-if not os.path.exists(TEMP_PATH):
-    os.mkdir(TEMP_PATH)
+for path in [LOG_PATH, TEMP_PATH]:
+    Path(path).mkdir(exist_ok=True)
+
 
 def set_logger(name, filename='log.log'):
     logger = logging.getLogger(name)
@@ -77,6 +78,7 @@ def set_logger(name, filename='log.log'):
     logger.addHandler(stderr_log_handler)
 
     return logger
+
 
 def get_sch_ref_df(sch_df_path=SCH_REF_PATH):
     df = pd.read_excel(sch_df_path)
