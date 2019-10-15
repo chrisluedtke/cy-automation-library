@@ -14,8 +14,6 @@ logger = set_logger(name=Path(__file__).stem)
 class Tracker:  # class used only for inheritance
     def __init__(self, kind, folder, filetype, test=False):
         self.kind = kind
-        self.folder = folder
-        self.filetype = filetype
         self.template_path = str(Path(TEMPLATES_PATH) / 
                                  f"{YEAR} {self.kind} Template.xlsx")
         self.sch_ref_df = get_sch_ref_df()
@@ -28,7 +26,7 @@ class Tracker:  # class used only for inheritance
 
         self.sch_ref_df['tracker_path'] = self.sch_ref_df.apply(
             lambda df: (
-                Path(root_dir) / f"{df['Informal Name']} {self.folder}" / 
+                Path(root_dir) / f"{df['Informal Name']} {folder}" / 
                 f"{YEAR} {self.kind} - {df['Informal Name']}{filetype}"
             ),
             axis=1
