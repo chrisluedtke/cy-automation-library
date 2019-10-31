@@ -163,8 +163,12 @@ class ToTAudit:
                 & df['Comments__c'].str.contains('T1')
                 & df['Comments__c'].str.contains('T2')
             ),
-            '<10 Minutes': (
+            'Course Performance <20 Minutes': (
                 df['Program__c_Name'].str.contains('Tutoring')
+                & (df['Amount_of_Time__c'] < 20)
+            ),
+            'SEL Check In Check Out <10 Minutes': (
+                df['Program__c_Name'].str.contains('SEL Check In')
                 & (df['Amount_of_Time__c'] < 10)
             ),
             '>120 Minutes': (
