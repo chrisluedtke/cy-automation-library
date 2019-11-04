@@ -7,8 +7,9 @@ from .simple_cysh import (get_object_df, get_object_fields, get_section_df,
                           object_reference, sf)
 
 if USER_SITE.lower() == 'chicago':
-    from . import ia_assignment_chi
-    from . import section_creation_chi
+    from . import chi_ia_assignment
+    from . import chi_section_creation
+    from . import chi_thrive_datashare
     from .tot_audit import ToTAudit
     from .trackers import (AttendanceTracker, CoachingLog, 
                            LeadershipTracker, WeeklyServiceTracker)
