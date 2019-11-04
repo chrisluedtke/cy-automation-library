@@ -100,7 +100,7 @@ def get_object_df(object_name, field_list=None, where=None, rename_id=False,
 
 
 def get_section_df(sections_of_interest):
-    if type(sections_of_interest) == str:
+    if isinstance(sections_of_interest, str):
         sections_of_interest = [sections_of_interest]
 
     program_df = get_object_df(
@@ -121,10 +121,9 @@ def get_section_df(sections_of_interest):
 
 
 def get_student_section_staff_df(sections_of_interest, schools=None):
-    if type(sections_of_interest) == str:
+    if isinstance(sections_of_interest, str):
         sections_of_interest = [sections_of_interest]
-
-    if schools and type(schools) == str:
+    if schools and isinstance(schools, str):
         schools = [schools]
 
     # load salesforce tables

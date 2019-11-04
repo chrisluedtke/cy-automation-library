@@ -121,7 +121,8 @@ class ExcelTracker(Tracker):  # class used only for inheritance
             sections_of_interest = ''
 
         stdnt_df = cysh.get_student_section_staff_df(
-            schools=[school_formal], sections_of_interest=sections_of_interest
+            sections_of_interest=sections_of_interest,
+            schools=[school_formal]
         )
         stdnt_df = stdnt_df.sort_values('Student_Name__c')
 
