@@ -1,5 +1,6 @@
 pandas
 PyPDF2
+pysftp
 python-dotenv
 selenium
 selenium-requests
