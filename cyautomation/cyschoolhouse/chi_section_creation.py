@@ -105,7 +105,7 @@ def MIRI_sections_to_create(start_date, end_date):
 
     cp_sect_df = sect_df.loc[sect_df['Program__c_Name'].isin(cp_sections)]
     cp_sect_df.loc[:, 'Program__c_Name'] = cp_sect_df['Program__c_Name'].map({
-        'Tutoring: Literacy': 'Math Inventory',
+        'Tutoring: Literacy': 'Reading Inventory',
         'Tutoring: Math': 'Math Inventory'
     })
 
