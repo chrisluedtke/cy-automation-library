@@ -145,7 +145,7 @@ def write_tables_to_cyconnect(cy_export_dir):
     data_file = 'ATTENDANCE'
 
     attend_frame = convert_table(df=all_df, data_file=data_file, 
-                                data_dict=data_dict)
+                                 data_dict=data_dict)
     attend_frame = attend_frame.loc[attend_frame['ATTENDANCE_DATE'].notna()]
     attend_frame.to_csv(cy_export_dir / f'{data_file}.csv', index=False)
 
@@ -153,15 +153,17 @@ def write_tables_to_cyconnect(cy_export_dir):
     data_file = 'MEMBERSHIP'
 
     member_frame = convert_table(df=all_df, data_file=data_file, 
-                                data_dict=data_dict)
+                                 data_dict=data_dict)
     member_frame = member_frame.drop_duplicates('PROGRAM_MEMBERSHIP_SYSTEM_ID')
+    member_frame['MEMBERSHIP_EXIT_REASONS'] = \
+        member_frame['MEMBERSHIP_EXIT_REASONS'].str.slice(0, 50)
     member_frame.to_csv(cy_export_dir / f'{data_file}.csv', index=False)
 
     # PARTICIPANT ~ Student
     data_file = 'PARTICIPANT'
 
     partic_frame = convert_table(df=all_df, data_file=data_file, 
-                                data_dict=data_dict)
+                                 data_dict=data_dict)
     partic_frame = partic_frame.drop_duplicates('PARTICIPANT_SYSTEM_ID')
     partic_frame.to_csv(cy_export_dir / f'{data_file}.csv', index=False)
 
@@ -169,7 +171,7 @@ def write_tables_to_cyconnect(cy_export_dir):
     data_file = 'FACILITY'
 
     faclty_frame = convert_table(df=all_df, data_file=data_file, 
-                                data_dict=data_dict)
+                                 data_dict=data_dict)
     faclty_frame = faclty_frame.dropna().drop_duplicates('FACILITY_SYSTEM_ID')
     faclty_frame.to_csv(cy_export_dir / f'{data_file}.csv', index=False)
 
@@ -208,14 +210,14 @@ def convert_table(df, data_file, data_dict):
     return df
 
 
-def write_tables_to_thrive_sftp(cy_export_dir):
+def write_tables_to_thrive_sftp(files_dir):
     logger.info('Writing Thrive tables to Thrive SFTP')
     srv = get_srv(host=os.environ['THRIVE_HOST'],
                   username=os.environ['THRIVE_USER'],
                   password=os.environ['THRIVE_PASS'])
 
-    for p in cy_export_dir.iterdir():
-        srv.put(p)
+    for p in files_dir.iterdir():
+        srv.put(p, remotepath=f'salesforce/{p.name}')
 
 
 def get_srv(host, username, password):
