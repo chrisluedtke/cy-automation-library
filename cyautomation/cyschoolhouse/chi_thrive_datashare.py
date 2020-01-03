@@ -107,9 +107,7 @@ def load_omni_df():
     return all_df
 
 
-def write_tables_to_cyconnect(cy_export_dir):
-    logger.info(f'Writing Thrive tables to cyconnect at: {cy_export_dir}')
-
+def parse_omni_df(all_df):
     data_dict_path = (BASE_DIR / 
                       f"{os.environ['YEAR']} Thrive Program Data Layout.xlsx")
 
@@ -118,62 +116,72 @@ def write_tables_to_cyconnect(cy_export_dir):
     data_dict = data_dict[['PROGRAM DATA FILE', 'DATA ELEMENTS', 
                            'CY COLUMN NAME', 'CY COLUMN VALUES']]
 
-    all_df = load_omni_df()
-
     # Program ~ Section (Active only?)
     data_file='PROGRAM'
-    program_frame = convert_table(df=all_df, data_file=data_file, 
-                                data_dict=data_dict)
+    program_df = convert_table(df=all_df, data_file=data_file, 
+                                  data_dict=data_dict)
 
     # reduce to one section per row
-    program_frame = program_frame.drop_duplicates('PROGRAM_SYSTEM_ID')
+    program_df = program_df.drop_duplicates('PROGRAM_SYSTEM_ID')
 
     # Fill
     # PROGRAM_INTERVENTION_LEVEL   Multiple: Tier2, Tier1 (Homework Assistance)
-    program_frame['PROGRAM_INTERVENTION_LEVEL'] = "Tier2"
-    condition = program_frame['PROGRAM_GROUP'] == 'Homework Assistance'
-    program_frame.loc[condition, 'PROGRAM_INTERVENTION_LEVEL'] = "Tier1"
+    program_df['PROGRAM_INTERVENTION_LEVEL'] = "Tier2"
+    condition = program_df['PROGRAM_GROUP'] == 'Homework Assistance'
+    program_df.loc[condition, 'PROGRAM_INTERVENTION_LEVEL'] = "Tier1"
 
     # DELIVERY_WEEKS    Multiple: 8 (SEL/Attendance), blank (all others)
     condition = \
-        program_frame['PROGRAM_GROUP'].str.contains('SEL|Attendance') == True
-    program_frame.loc[condition, 'DELIVERY_WEEKS'] = 8
-
-    program_frame.to_csv(cy_export_dir / f'{data_file}.csv', index=False)
+        program_df['PROGRAM_GROUP'].str.contains('SEL|Attendance') == True
+    program_df.loc[condition, 'DELIVERY_WEEKS'] = 8
 
     # Attendance ~ ISR
     data_file = 'ATTENDANCE'
 
-    attend_frame = convert_table(df=all_df, data_file=data_file, 
+    attend_df = convert_table(df=all_df, data_file=data_file, 
                                  data_dict=data_dict)
-    attend_frame = attend_frame.loc[attend_frame['ATTENDANCE_DATE'].notna()]
-    attend_frame.to_csv(cy_export_dir / f'{data_file}.csv', index=False)
+    attend_df = attend_df.loc[attend_df['ATTENDANCE_DATE'].notna()]
+    attend_df = attend_df.drop_duplicates()
 
     # MEMBERSHIP ~ Student Section
     data_file = 'MEMBERSHIP'
 
-    member_frame = convert_table(df=all_df, data_file=data_file, 
+    member_df = convert_table(df=all_df, data_file=data_file, 
                                  data_dict=data_dict)
-    member_frame = member_frame.drop_duplicates('PROGRAM_MEMBERSHIP_SYSTEM_ID')
-    member_frame['MEMBERSHIP_EXIT_REASONS'] = \
-        member_frame['MEMBERSHIP_EXIT_REASONS'].str.slice(0, 50)
-    member_frame.to_csv(cy_export_dir / f'{data_file}.csv', index=False)
+    member_df = member_df.drop_duplicates('PROGRAM_MEMBERSHIP_SYSTEM_ID')
+    member_df['MEMBERSHIP_EXIT_REASONS'] = \
+        member_df['MEMBERSHIP_EXIT_REASONS'].str.slice(0, 50)
 
     # PARTICIPANT ~ Student
     data_file = 'PARTICIPANT'
 
-    partic_frame = convert_table(df=all_df, data_file=data_file, 
+    partic_df = convert_table(df=all_df, data_file=data_file, 
                                  data_dict=data_dict)
-    partic_frame = partic_frame.drop_duplicates('PARTICIPANT_SYSTEM_ID')
-    partic_frame.to_csv(cy_export_dir / f'{data_file}.csv', index=False)
+    partic_df = partic_df.drop_duplicates('PARTICIPANT_SYSTEM_ID')
 
     # FACILITY ~ School
     data_file = 'FACILITY'
 
-    faclty_frame = convert_table(df=all_df, data_file=data_file, 
-                                 data_dict=data_dict)
-    faclty_frame = faclty_frame.dropna().drop_duplicates('FACILITY_SYSTEM_ID')
-    faclty_frame.to_csv(cy_export_dir / f'{data_file}.csv', index=False)
+    facility_df = convert_table(df=all_df, data_file=data_file, 
+                                data_dict=data_dict)
+    facility_df = facility_df.dropna().drop_duplicates('FACILITY_SYSTEM_ID')
+
+    return (program_df, attend_df, member_df, partic_df, facility_df)
+
+
+def write_tables_to_cyconnect(cy_export_dir):
+    logger.info(f'Writing Thrive tables to cyconnect at: {cy_export_dir}')
+
+    all_df = load_omni_df()
+
+    program_df, attend_df, member_df, partic_df, facility_df = \
+        parse_omni_df(all_df)
+
+    program_df.to_csv(cy_export_dir / 'PROGRAM.csv', index=False)
+    attend_df.to_csv(cy_export_dir / 'ATTENDANCE.csv', index=False)
+    member_df.to_csv(cy_export_dir / 'MEMBERSHIP.csv', index=False)
+    partic_df.to_csv(cy_export_dir / 'PARTICIPANT.csv', index=False)
+    facility_df.to_csv(cy_export_dir / 'FACILITY.csv', index=False)
 
     return
 
@@ -217,7 +225,7 @@ def write_tables_to_thrive_sftp(files_dir):
                   password=os.environ['THRIVE_PASS'])
 
     for p in files_dir.iterdir():
-        srv.put(p, remotepath=f'salesforce/{p.name}')
+        srv.put(p, remotepath=f'./salesforce/{p.name}')
 
 
 def get_srv(host, username, password):
