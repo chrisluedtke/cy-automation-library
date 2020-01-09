@@ -124,6 +124,10 @@ def parse_omni_df(all_df):
     # reduce to one section per row
     program_df = program_df.drop_duplicates('PROGRAM_SYSTEM_ID')
 
+    # convert floats to ints, fill NaNs with 0
+    for col in ['DELIVERY_OVERALL_DURATION', 'DELIVERY_WEEKS']:
+        program_df[col] = program_df[col].fillna(0.0).astype(int)
+
     # Fill
     # PROGRAM_INTERVENTION_LEVEL   Multiple: Tier2, Tier1 (Homework Assistance)
     program_df['PROGRAM_INTERVENTION_LEVEL'] = "Tier2"
