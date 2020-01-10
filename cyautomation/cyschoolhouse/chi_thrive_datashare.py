@@ -117,8 +117,7 @@ def parse_omni_df(all_df):
                            'CY COLUMN NAME', 'CY COLUMN VALUES']]
 
     # Program ~ Section (Active only?)
-    data_file ='PROGRAM'
-    program_df = convert_table(df=all_df, data_file=data_file, 
+    program_df = convert_table(df=all_df, data_file='PROGRAM', 
                                data_dict=data_dict)
 
     # reduce to one section per row
@@ -140,33 +139,25 @@ def parse_omni_df(all_df):
         program_df[col] = program_df[col].fillna(0.0).astype(int)
 
     # Attendance ~ ISR
-    data_file = 'ATTENDANCE'
-
-    attend_df = convert_table(df=all_df, data_file=data_file, 
+    attend_df = convert_table(df=all_df, data_file='ATTENDANCE', 
                                  data_dict=data_dict)
     attend_df = attend_df.loc[attend_df['ATTENDANCE_DATE'].notna()]
     attend_df = attend_df.drop_duplicates()
 
     # MEMBERSHIP ~ Student Section
-    data_file = 'MEMBERSHIP'
-
-    member_df = convert_table(df=all_df, data_file=data_file, 
+    member_df = convert_table(df=all_df, data_file='MEMBERSHIP', 
                                  data_dict=data_dict)
     member_df = member_df.drop_duplicates('PROGRAM_MEMBERSHIP_SYSTEM_ID')
     member_df['MEMBERSHIP_EXIT_REASONS'] = \
         member_df['MEMBERSHIP_EXIT_REASONS'].str.slice(0, 50)
 
     # PARTICIPANT ~ Student
-    data_file = 'PARTICIPANT'
-
-    partic_df = convert_table(df=all_df, data_file=data_file, 
+    partic_df = convert_table(df=all_df, data_file='PARTICIPANT', 
                                  data_dict=data_dict)
     partic_df = partic_df.drop_duplicates('PARTICIPANT_SYSTEM_ID')
 
     # FACILITY ~ School
-    data_file = 'FACILITY'
-
-    facility_df = convert_table(df=all_df, data_file=data_file, 
+    facility_df = convert_table(df=all_df, data_file='FACILITY', 
                                 data_dict=data_dict)
     facility_df = facility_df.dropna().drop_duplicates('FACILITY_SYSTEM_ID')
 
@@ -212,7 +203,7 @@ def convert_table(df, data_file, data_dict):
         df['PROGRAM_MEMBERSHIP_SYSTEM_ID'] = (df['PROGRAM_SYSTEM_ID'] + "_" +
                                               df['PARTICIPANT_SYSTEM_ID'])
     
-    df = df[rename_dict.values()]
+    df = df[list(rename_dict.values())]
     
     # Fill constant values
     for i, r in data_dict.loc[data_dict['CY COLUMN VALUES'].notna()].iterrows():
