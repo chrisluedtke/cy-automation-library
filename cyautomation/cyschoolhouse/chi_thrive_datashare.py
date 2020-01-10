@@ -117,16 +117,12 @@ def parse_omni_df(all_df):
                            'CY COLUMN NAME', 'CY COLUMN VALUES']]
 
     # Program ~ Section (Active only?)
-    data_file='PROGRAM'
+    data_file ='PROGRAM'
     program_df = convert_table(df=all_df, data_file=data_file, 
-                                  data_dict=data_dict)
+                               data_dict=data_dict)
 
     # reduce to one section per row
     program_df = program_df.drop_duplicates('PROGRAM_SYSTEM_ID')
-
-    # convert floats to ints, fill NaNs with 0
-    for col in ['DELIVERY_OVERALL_DURATION', 'DELIVERY_WEEKS']:
-        program_df[col] = program_df[col].fillna(0.0).astype(int)
 
     # Fill
     # PROGRAM_INTERVENTION_LEVEL   Multiple: Tier2, Tier1 (Homework Assistance)
@@ -138,6 +134,10 @@ def parse_omni_df(all_df):
     condition = \
         program_df['PROGRAM_GROUP'].str.contains('SEL|Attendance') == True
     program_df.loc[condition, 'DELIVERY_WEEKS'] = 8
+
+    # convert floats to ints, fill NaNs with 0
+    for col in ['DELIVERY_OVERALL_DURATION', 'DELIVERY_WEEKS']:
+        program_df[col] = program_df[col].fillna(0.0).astype(int)
 
     # Attendance ~ ISR
     data_file = 'ATTENDANCE'
