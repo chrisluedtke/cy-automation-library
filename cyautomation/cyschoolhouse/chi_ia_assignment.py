@@ -103,7 +103,7 @@ def get_student_enrollment_details():
         pd.to_datetime(stu_sec_df['Intervention_Enrollment_Start_Date__c'])
     stu_sec_df.loc[:,'Enrollment_End_Date__c'] = \
         (pd.to_datetime(stu_sec_df['Enrollment_End_Date__c'])
-           .fillna(pd.to_datetime(str(datetime.now(tz='US/Central')))))
+           .fillna(pd.to_datetime(str(datetime.now()))))
 
     school_df = cysh.get_object_df(
         'Account',
