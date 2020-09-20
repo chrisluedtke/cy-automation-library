@@ -3,9 +3,9 @@ import os
 from pathlib import Path
 
 import pandas as pd
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
-load_dotenv(Path(__file__).parent / '.env')
+load_dotenv(find_dotenv())
 
 __all__ = [
     'USER_SITE',
@@ -20,11 +20,6 @@ __all__ = [
     'get_sch_ref_df',
 ]
 
-assert Path('Z:').exists(), ("Failed to connect to Z: drive. You must map "
-                             "cyconnect (Sharepoint) to this drive location. "
-                             "You may need to login to cyconnect on Internet "
-                             "Explorer. See the README.md.")
-
 # configuration from .env
 YEAR = os.environ['YEAR']
 USER_SITE = os.environ['USER_SITE']
@@ -34,6 +29,7 @@ SF_URL_DICT = {
     'SY19_SB': "https://na82.salesforce.com",
     'SY20': "https://na90.salesforce.com",
     # 'SY_20_SB': "",
+    'SY21': "https://cs59.salesforce.com",
 }
 
 if os.getenv('SF_SANDBOX') == 'True':

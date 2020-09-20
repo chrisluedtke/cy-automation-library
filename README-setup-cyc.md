@@ -1,15 +1,33 @@
 # Map cyconnect (SharePoint) as a Network Drive
 
-1. Open your file explorer
-2. Right-click "This PC" and choose "Map Network Drive":
+If you have trouble with these steps, read [Troubleshoot mapped network drives that connect to SharePoint Online](https://docs.microsoft.com/en-us/sharepoint/troubleshoot/administration/troubleshoot-mapped-network-drives).
 
-![caption](img/mapdrive_sidebar.PNG)
+1. Open **Internet Explorer** (you must use this browser).
 
-3. Enter `\\cityyear.sharepoint.com@SSL\teams\xxx` (replace xxx with your site's 3-digit code as seen in your cyconnect homepage url)
+2. Navigate to https://cityyear.sharepoint.com/teams/chi
 
-![caption](img/mapdrive_window.PNG)
+3. Sign in, and be sure to select "Remember Me", "Do not challenge me on this device again", and "Stay Signed In".
 
-4. If this fails, login to cyconnect on Internet Explorer (32-bit). Navigate to a document library. Under "All Documents" choose "View in file Explorer". Choose to allow all pop-ups if necessary. Once the library opens in your file explorer, attempt try to map the network drive again.
-5. Add your favorite cyconnect locations to your "Quick access" panel.
+4. Open `Tools -> Internet Options`.
 
-Note: you may need to periodically reconnect this network drive by logging in to cyconnect in the Internet Explorer browser. You don't need to redo all the steps - just logging in to cyconnect should re-establish the connection.
+    ![](img/mapdrive_internet_options.png)
+
+5. Under `Security`, click `Trusted Sites`, then click the `Sites` button.
+
+    ![](img/mapdrive_security_sites.png)
+
+6. Add the following sites and click `Close`.
+    * `https://*.sharepoint.com`
+    * `https://*.microsoftonline.com`
+    * `https://*.microsoft.com`
+    * `https://cityyear.sharepoint.com`
+
+7. Back in the Internet Options window, drag the slider to set security to `Low`. Then click `Apply` and `Okay`.
+    
+    ![](img/mapdrive_trusted_permissions.png)
+
+8. Back on SharePoint, navigate to a document library. Under `All Documents` choose `View in file Explorer`. Choose to allow all pop-ups if necessary.
+
+    ![](img/mapdrive_file_explorer.png)
+
+9. The scripts in this project should now run smoothly. You may need to periodically log in again to SharePoint in the Internet Explorer browser to refresh your credentials.

@@ -3,7 +3,6 @@
 *.log
 *.pyc
 *.bat
-*.env
 *credentials*
 batch-files/*
 notebooks/ignore/
@@ -13,3 +12,5 @@ cyautomation/cyschoolhouse/temp/
 .vscode/
 *cookies.pkl
 *__pycache__/
+env
+.env

@@ -15,11 +15,36 @@ specified format in Excel.
 * `selenium-testing` (testing only)
   * This folder is largely a set of testing scripts used as a proof of concept of a few different features of Selenium, and is only relevant if you're interested in some of the more advanced features that are being tested.  
 
-## Set-up
+## Set-up (Windows)
 
-Install Python. If you are new to Python, [see here](README-setup-python.md).
-
-Install GitHub and clone this repository to your computer. In your console, create a virtual environment (optional but recommended), navigate to the repository's root directory, and run `pip install -r requirements.txt`. This will install all the third party Python packages that are required for these tools.
+1. Install Python 3.8. If you are new to Python, [see this guide](README-setup-python.md).
+2. [Install GitHub Desktop](https://desktop.github.com/) and clone this repository to your computer.
+3. In your console, create a virtual environment and activate it.
+    ```console
+    python -m venv env
+    ```
+    ```console
+    env\Scripts\activate
+    ```
+4. Update `wheel` (required to install `xlwings`, see [this issue](https://github.com/xlwings/xlwings/issues/1243))
+    ```console
+    pip install --upgrade wheel
+    ```
+5. Install all the third party Python packages that are required for this project.
+    ```console
+    pip install -r requirements.txt
+    ```
+6. Copy `.env.sample` to `.env`.
+    ```console
+    copy .env.sample .env
+    ```
+7.  Fill in the details of `.env`. Do not edit `.env.sample`. Only edit `.env`. Saleforce credentials can be found on Salesforce as below:
+    * `SF_USER`: Found at `My Settings > Personal > Personal Information`. Look for the `Username` field. This will be in the form `xxxxxxx@cityyear.org.cyschorgb`.
+    * `SF_PASS`: Your password might not be the same as Okta. You can reset your Salesforce password under `My Settings > Personal > Change My Password`. This will not affect your Okta single sign on.
+    * `SF_TOKEN`: Under `My Settings > Personal > Personal Information`, choose `Reset Security Token`. This will trigger an email to your inbox containing your security token.
+8. [Install Firefox](https://www.mozilla.org/en-US/firefox/new/). This is the browser used for Salesforce automation.
+9. Geckodriver is a tool used to automate tasks in Firefox. This driver is provided in this project at `./geckodriver/geckodriver.exe`.
+If you don't trust this executable, you can replace it with the version [provided here](https://github.com/mozilla/geckodriver/releases).
 
 Some scripts are used to manipulate files in cyconnect (SharePoint). This requires that the user map SharePoint as a network drive. Follow [this visual guide](README-setup-cyc.md) to set it up.
 
@@ -37,35 +62,6 @@ Files and folders mentioned in this section are relative to `./cyautomation/cysc
   * Contains Excel workbooks that contain data to be uploaded. Theses are typically not used in Chicago.
 * `templates` folder
   * Contains Excel workbooks that are populated by scripts and then written to cyconnect (SharePoint).
-
-### Set-up
-
-#### Credentials and Configuration
-
-Create a file called `.env`. Format this file as:
-
-```
-YEAR = SY20
-USER_SITE = Chicago
-
-# change to True to use salesforce sandbox and credentials
-SF_SANDBOX = False
-
-SF_USER = 
-SF_PASS = 
-SF_TOKEN = 
-
-# optional
-SF_SB_USER = 
-SF_SB_PASS = 
-SF_SB_TOKEN = 
-
-# optional, currently used only to send emails
-OKTA_USER = 
-OKTA_PASS = 
-```
-
-You can find these credentials in Salesforce under your user settings ([visual guide](README-setup-sf.md)). Your username should be similar to `username@cityyear.org.cyschorgb`. The password may not be the same as your Okta single sign-on password. You may need to trigger a password reset in order to obtain the password associated with your Salesforce account. To do so, submit a [service ticket](https://mycityyear.force.com/ServiceDesk/500/o).
 
 ## Usage
 
@@ -94,12 +90,6 @@ cysh.get_object_df(
 )
 ```
 
-## Dependencies
-
-Two important dependencies are [Selenium](http://selenium-python.readthedocs.io/) and
-[selenium-requests](https://github.com/cryzed/Selenium-Requests) which are available via pip. The implementation of selenium in this repository expects you to use the Firefox browser with
-[gecko driver](https://github.com/mozilla/geckodriver/releases). This driver is provided here at `./geckodriver/geckodriver.exe`. If you don't trust this executable, you can replace it with the version provided [here](https://github.com/mozilla/geckodriver/releases).
-
 ## Contribute
 
 The easiest way to get started is to dive into the code, and when you find something that doesn't make sense, post an issue.  If
@@ -110,5 +100,3 @@ If you want to contribute code to the project, follow the traditional [GitHub wo
 1. create a branch with a descriptive name
 1. implement your code improvements
 1. submit a pull request
-
-Alternatively, reach out to Alex at aperusse@cityyear.org or Chris at chrisluedtke@gmail.com.
