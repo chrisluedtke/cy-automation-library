@@ -104,15 +104,15 @@ def create_single_section(school, acm, sectionname, insch_extlrn, start_date,
 
 
 def create_all_sections(data=pd.DataFrame(), driver=None):
-    """Runs the entire script. Loads sections to create from the 
+    """Runs the entire script. Loads sections to create from the
     spreadsheet at 'input_files/section-creator-input.xlsx'.
     """
     if data.empty:
-        data = pd.read_excel(os.path.join(os.path.dirname(__file__), 
+        data = pd.read_excel(os.path.join(os.path.dirname(__file__),
                              'input_files/section-creator-input.xlsx'))
 
     logging.info(f'Creating {len(data)} sections')
-    
+
     data['Start_Date'] = pd.to_datetime(data['Start_Date']).dt.strftime('%m/%d/%Y')
     data['End_Date'] = pd.to_datetime(data['End_Date']).dt.strftime('%m/%d/%Y')
     data = data.fillna('').replace('NaT', '')

@@ -28,9 +28,9 @@ def academic_sections_to_create(start_date, end_date):
     acm_dep_df['Staff__c_Name'] = acm_dep_df['Staff__c_Name'].str.strip()
     acm_dep_df['SectionName'] = acm_dep_df['SectionName'].str.strip().str.upper()
 
-    acm_dep_df.loc[acm_dep_df['SectionName'].str.contains('MATH'), 
+    acm_dep_df.loc[acm_dep_df['SectionName'].str.contains('MATH'),
                    'SectionName_MATH'] = 'Tutoring: Math'
-    acm_dep_df.loc[acm_dep_df['SectionName'].str.contains('ELA'), 
+    acm_dep_df.loc[acm_dep_df['SectionName'].str.contains('ELA'),
                    'SectionName_ELA'] = 'Tutoring: Literacy'
 
     acm_dep_df = pd.melt(
@@ -42,12 +42,12 @@ def academic_sections_to_create(start_date, end_date):
     acm_dep_df = acm_dep_df.loc[acm_dep_df['Program__c_Name'].notna()]
 
     # Filter out existing sections
-    acm_dep_df['key'] = (acm_dep_df['Staff__c'] + '_' +  
+    acm_dep_df['key'] = (acm_dep_df['Staff__c'] + '_' +
                          acm_dep_df['Program__c_Name'])
 
     sections_of_interest=['Tutoring: Literacy', 'Tutoring: Math']
     section_df = cysh.get_section_df(sections_of_interest)
-    section_df['key'] = (section_df['Intervention_Primary_Staff__c'] + '_' + 
+    section_df['key'] = (section_df['Intervention_Primary_Staff__c'] + '_' +
                          section_df['Program__c_Name'])
 
     acm_dep_df = acm_dep_df.loc[~acm_dep_df['key'].isin(section_df['key'])]
@@ -57,16 +57,16 @@ def academic_sections_to_create(start_date, end_date):
     acm_dep_df = acm_dep_df.merge(staff_df[['Staff__c_Name', 'School']],
                                   on='Staff__c_Name')
 
-    acm_dep_df = format_df(acm_dep_df, start_date=start_date, 
-                           end_date=end_date, 
-                           in_sch_ext_lrn='In School', 
+    acm_dep_df = format_df(acm_dep_df, start_date=start_date,
+                           end_date=end_date,
+                           in_sch_ext_lrn='In School',
                            target_dosage=900)
 
     return acm_dep_df
 
 
 def non_academic_sections_to_create(start_date, end_date):
-    """ Produces table of sections to create, with the assumption that all 
+    """ Produces table of sections to create, with the assumption that all
     'Corps Member' roles should have 1 of each non-academic section.
     """
     sections_of_interest = ['Coaching: Attendance', 'SEL Check In Check Out']
@@ -85,7 +85,7 @@ def non_academic_sections_to_create(start_date, end_date):
     staff_df['key'] = staff_df['Staff__c'] + staff_df['SectionName']
 
     section_df = cysh.get_section_df(sections_of_interest)
-    section_df['key'] = (section_df['Intervention_Primary_Staff__c'] + 
+    section_df['key'] = (section_df['Intervention_Primary_Staff__c'] +
                          section_df['Program__c_Name'])
 
     staff_df = staff_df.loc[~staff_df['key'].isin(section_df['key'])]
@@ -122,8 +122,8 @@ def MIRI_sections_to_create(start_date, end_date):
 
     # Merge in staff name and school
     staff_df = cysh.get_staff_df()
-    df = df.merge(staff_df[['Staff__c', 'Staff__c_Name', 'School']], 
-                  how='left', left_on='Intervention_Primary_Staff__c', 
+    df = df.merge(staff_df[['Staff__c', 'Staff__c_Name', 'School']],
+                  how='left', left_on='Intervention_Primary_Staff__c',
                   right_on='Staff__c')
 
     # Filter to only high schools
@@ -136,7 +136,7 @@ def MIRI_sections_to_create(start_date, end_date):
     return df
 
 
-def format_df(df, start_date, end_date, in_sch_ext_lrn='In School', 
+def format_df(df, start_date, end_date, in_sch_ext_lrn='In School',
               target_dosage=0):
     assert in_sch_ext_lrn in {'In School', 'Extended Learning', 'Curriculum'}
 
@@ -161,14 +161,14 @@ def deactivate_all_sections(section_type):
     We don't provide this programming in Chicago, so we can safely deactivate all.
     """
     section_df = cysh.get_object_df(
-        'Section__c', 
-        ['Id', 'Program__c', 'Active__c'], 
-        rename_id=True, 
+        'Section__c',
+        ['Id', 'Program__c', 'Active__c'],
+        rename_id=True,
         rename_name=True
     )
     program_df = cysh.get_object_df(
-        'Program__c', 
-        ['Id', 'Name'], 
+        'Program__c',
+        ['Id', 'Name'],
         rename_id=True,
         rename_name=True
     )

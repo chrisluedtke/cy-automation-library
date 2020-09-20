@@ -49,7 +49,7 @@ def enrollment_sync(source_section, destination_section, enrollment_start_date,
 
     # get students enrolled in source section but not destination section
     if ACM_to_TL:
-        key_cols = ['Student__c', 'School']      
+        key_cols = ['Student__c', 'School']
     else:
         key_cols = ['Student__c', 'Intervention_Primary_Staff__c']
 
@@ -78,7 +78,7 @@ def enrollment_sync(source_section, destination_section, enrollment_start_date,
 
     to_enroll_df = to_enroll_df.merge(
         dest_section_df[dest_cols],
-        how='left', on=merge_on, 
+        how='left', on=merge_on,
         suffixes=('_from', '_to_Enroll')
     )
 
@@ -92,9 +92,9 @@ def enrollment_sync(source_section, destination_section, enrollment_start_date,
     results = []
     for index, row in to_enroll_df.iterrows():
         result = create_one(
-            student__c=row['Student__c'], 
+            student__c=row['Student__c'],
             section__c=row['Section__c_to_Enroll'],
-            enrollment_start_date=enrollment_start_date    
+            enrollment_start_date=enrollment_start_date
         )
         results.append(result)
 

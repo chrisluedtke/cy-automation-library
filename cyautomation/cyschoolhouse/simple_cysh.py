@@ -70,7 +70,7 @@ def get_object_df(object_name, field_list=None, where=None, rename_id=False,
         querystring = f"SELECT {', '.join(field_list)} FROM {object_name}"
 
         if where:
-            querystring += f" WHERE {where}"    
+            querystring += f" WHERE {where}"
 
         if querystring.endswith('()'):
             query_return = {'records': []}
@@ -184,7 +184,7 @@ def get_staff_df(schools=None, roles=None):
 
     if roles:
         where = f"({where} AND Role__c IN {in_str(roles)})"
-    staff_df = get_object_df('Staff__c', staff_cols, where=where, 
+    staff_df = get_object_df('Staff__c', staff_cols, where=where,
                              rename_name=True, rename_id=True)
 
     staff_df = staff_df.merge(school_df, how='left', on='Organization__c')
@@ -206,10 +206,10 @@ def get_student_df(schools=None):
                                           'Name': 'School'})
 
     student_df = get_object_df(
-        'Student__c', 
+        'Student__c',
         ['Id', 'Local_Student_ID__c', 'External_Id__c'],
-        where=f"School__c IN {in_str(school_df['Organization__c'])}", 
-        rename_name=True, 
+        where=f"School__c IN {in_str(school_df['Organization__c'])}",
+        rename_name=True,
         rename_id=True
     )
 

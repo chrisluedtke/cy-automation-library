@@ -30,18 +30,18 @@ def load_omni_df():
 
     # Pull Salesforce data
     ISR_df = cysh.get_object_df(
-        'Intervention_Session_Result__c', 
-        ['Student_Section__c', 'Amount_of_Time__c', 
-        'Intervention_Session_Date__c', 'Primary_Skill__c'], 
+        'Intervention_Session_Result__c',
+        ['Student_Section__c', 'Amount_of_Time__c',
+        'Intervention_Session_Date__c', 'Primary_Skill__c'],
         rename_id=True
         )
     school_df = cysh.get_object_df(
-        'Account', 
+        'Account',
         ['Id', 'Name']
         )
     student_df = cysh.get_object_df(
         'Student__c',
-        ['Id', 'Local_Student_ID__c', 'Student_Id__c', 'Date_of_Birth__c', 
+        ['Id', 'Local_Student_ID__c', 'Student_Id__c', 'Date_of_Birth__c',
         'Student_First_Name__c', 'Student_Last_Name__c', 'Grade__c'],
         where=f"School__c IN ({str(school_df['Id'].tolist())[1:-1]})",
         rename_id=True
@@ -49,10 +49,10 @@ def load_omni_df():
     student_df['Date_of_Birth__c'] = dt_to_date(student_df['Date_of_Birth__c'])
 
     stu_sec_df = cysh.get_object_df(
-        'Student_Section__c', 
+        'Student_Section__c',
         ['Id', 'Name', 'Active__c', 'Section__c', 'Student__c',
-        'Student_Grade__c', 'Intervention_Enrollment_Start_Date__c', 
-        'Enrollment_End_Date__c', 'Section_Exit_Reason__c'], 
+        'Student_Grade__c', 'Intervention_Enrollment_Start_Date__c',
+        'Enrollment_End_Date__c', 'Section_Exit_Reason__c'],
         rename_id=True, rename_name=True
         )
     stu_sec_df = stu_sec_df.rename(
@@ -63,18 +63,18 @@ def load_omni_df():
         stu_sec_df[col] = dt_to_date(stu_sec_df[col])
 
     program_df = cysh.get_object_df(
-        'Program__c', 
-        ['Id', 'Name'], 
+        'Program__c',
+        ['Id', 'Name'],
         rename_id=True
         )
     program_df = program_df.rename(columns={'Id': 'Program__c',
     'Name': 'Program'})
 
     section_df = cysh.get_object_df(
-        'Section__c', 
-        ['Id', 'Name', 'Active__c', 'School__c', 'Program__c', 
+        'Section__c',
+        ['Id', 'Name', 'Active__c', 'School__c', 'Program__c',
         'Intervention_Primary_Staff__c', 'In_After_School__c',
-        'Target_Dosage_Section_Goal__c'], 
+        'Target_Dosage_Section_Goal__c'],
         rename_id=True, rename_name=True
         )
     section_df = section_df.rename(columns={'Active__c':'Section_Active__c'})
@@ -82,7 +82,7 @@ def load_omni_df():
     section_df[col] = section_df[col].replace({0: np.nan})
 
     account_df = cysh.get_object_df('Account', ['Id', 'Name'])
-    account_df = account_df.rename(columns={'Id': 'School__c', 
+    account_df = account_df.rename(columns={'Id': 'School__c',
                                             'Name': 'School'})
 
     # merge tables
@@ -94,10 +94,10 @@ def load_omni_df():
                         .merge(ISR_df, on='Student_Section__c', how='left'))
 
     # filter for sections of interest
-    sections = ['Coaching: Attendance', 
+    sections = ['Coaching: Attendance',
                 'Tutoring: Math',
-                'Tutoring: Literacy', 
-                'Homework Assistance', 
+                'Tutoring: Literacy',
+                'Homework Assistance',
                 'SEL Check In Check Out']
     all_df = all_df.loc[all_df['Program'].isin(sections)]
 
@@ -105,16 +105,16 @@ def load_omni_df():
 
 
 def parse_omni_df(all_df):
-    data_dict_path = (BASE_DIR / 
+    data_dict_path = (BASE_DIR /
                       f"{os.environ['YEAR']} Thrive Program Data Layout.xlsx")
 
     data_dict = pd.read_excel(data_dict_path,
                               sheet_name='Program Data Elements')
-    data_dict = data_dict[['PROGRAM DATA FILE', 'DATA ELEMENTS', 
+    data_dict = data_dict[['PROGRAM DATA FILE', 'DATA ELEMENTS',
                            'CY COLUMN NAME', 'CY COLUMN VALUES']]
 
     # Program ~ Section (Active only?)
-    program_df = convert_table(df=all_df, data_file='PROGRAM', 
+    program_df = convert_table(df=all_df, data_file='PROGRAM',
                                data_dict=data_dict)
 
     # reduce to one section per row
@@ -136,25 +136,25 @@ def parse_omni_df(all_df):
         program_df[col] = program_df[col].fillna(0.0).astype(int)
 
     # Attendance ~ ISR
-    attend_df = convert_table(df=all_df, data_file='ATTENDANCE', 
+    attend_df = convert_table(df=all_df, data_file='ATTENDANCE',
                                  data_dict=data_dict)
     attend_df = attend_df.loc[attend_df['ATTENDANCE_DATE'].notna()]
     attend_df = attend_df.drop_duplicates()
 
     # MEMBERSHIP ~ Student Section
-    member_df = convert_table(df=all_df, data_file='MEMBERSHIP', 
+    member_df = convert_table(df=all_df, data_file='MEMBERSHIP',
                                  data_dict=data_dict)
     member_df = member_df.drop_duplicates('PROGRAM_MEMBERSHIP_SYSTEM_ID')
     member_df['MEMBERSHIP_EXIT_REASONS'] = \
         member_df['MEMBERSHIP_EXIT_REASONS'].str.slice(0, 50)
 
     # PARTICIPANT ~ Student
-    partic_df = convert_table(df=all_df, data_file='PARTICIPANT', 
+    partic_df = convert_table(df=all_df, data_file='PARTICIPANT',
                                  data_dict=data_dict)
     partic_df = partic_df.drop_duplicates('PARTICIPANT_SYSTEM_ID')
 
     # FACILITY ~ School
-    facility_df = convert_table(df=all_df, data_file='FACILITY', 
+    facility_df = convert_table(df=all_df, data_file='FACILITY',
                                 data_dict=data_dict)
     facility_df = facility_df.dropna().drop_duplicates('FACILITY_SYSTEM_ID')
 
@@ -186,7 +186,7 @@ def dt_to_date(series):
 
 def convert_table(df, data_file, data_dict):
     df = df.copy()
-    
+
     data_dict = data_dict.loc[data_dict['PROGRAM DATA FILE']==data_file]
 
     # Map CY columns to Thrive columns
@@ -195,13 +195,13 @@ def convert_table(df, data_file, data_dict):
          rename_dict[r['CY COLUMN NAME']] = r['DATA ELEMENTS']
 
     df = df.rename(columns=rename_dict)
-    
+
     if 'PROGRAM_MEMBERSHIP_SYSTEM_ID' in rename_dict.values():
         df['PROGRAM_MEMBERSHIP_SYSTEM_ID'] = (df['PROGRAM_SYSTEM_ID'] + "_" +
                                               df['PARTICIPANT_SYSTEM_ID'])
-    
+
     df = df[list(rename_dict.values())]
-    
+
     # Fill constant values
     for i, r in data_dict.loc[data_dict['CY COLUMN VALUES'].notna()].iterrows():
         if r['CY COLUMN VALUES'].startswith('All: '):
@@ -231,7 +231,7 @@ def get_srv(host, username, password):
 
 
 def run():
-    cy_export_dir = (BASE_DIR / 'exports' / 
+    cy_export_dir = (BASE_DIR / 'exports' /
                      datetime.datetime.now().strftime(r'%Y.%m.%d'))
     cy_export_dir.mkdir(exist_ok=True)
     write_tables_to_cyconnect(cy_export_dir)

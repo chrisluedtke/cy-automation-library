@@ -21,7 +21,7 @@ SECTION_IA_DICT = {
 def get_ia_to_assign():
     """
     Writes an Excel template that contains indicator areas to be assigned.
-    That template is then processed by a separate function to actually 
+    That template is then processed by a separate function to actually
     make those assignments.
     """
     df = get_student_enrollment_details()

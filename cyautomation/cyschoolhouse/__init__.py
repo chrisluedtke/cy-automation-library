@@ -12,7 +12,7 @@ if USER_SITE.lower() == 'chicago':
     from . import chi_section_creation
     from . import chi_thrive_datashare
     from .tot_audit import ToTAudit
-    from .trackers import (AttendanceTracker, CoachingLog, 
+    from .trackers import (AttendanceTracker, CoachingLog,
                            LeadershipTracker, WeeklyServiceTracker)
 
 map_sharepoint_drive()

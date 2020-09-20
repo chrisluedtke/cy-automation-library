@@ -12,11 +12,11 @@ from .sendemail import send_email
 
 
 def _sf_api_approach(xlsx_path):
-    """ This is how the task would be accomplished via salesforce API, 
+    """ This is how the task would be accomplished via salesforce API,
     if we could edit the fields:
     """
     df = pd.read_excel(xlsx_path)
-    school_df = get_cysh_df('Account', ['Id', 'Name'])
+    school_df = cysh.get_object_df('Account', ['Id', 'Name'])
     df = df.merge(school_df, how='left', left_on='School', right_on='Name')
 
     drop_ids = []
@@ -70,7 +70,7 @@ def upload_all(enrollment_date, xlsx_dir=INPUT_PATH,
     for school_name, df in sdnt_df.groupby('School'):
         # Write csv
         path_to_csv = (
-            Path(TEMP_PATH) 
+            Path(TEMP_PATH)
             / f"{YEAR} New Students for CYSH - {school_name}.csv"
         )
 
@@ -186,7 +186,7 @@ def insert_data(driver):
 
 
 def update_student_External_Id(prefix='CPS_'):
-    """ Updates 'External_Id__c' field to 'CPS_' + 'Local_Student_ID__c'. 
+    """ Updates 'External_Id__c' field to 'CPS_' + 'Local_Student_ID__c'.
     Triggers external integrations at HQ.
     """
     student_df = cysh.get_student_df()
@@ -195,7 +195,7 @@ def update_student_External_Id(prefix='CPS_'):
         raise ValueError(f'Error: Duplicates exist on Local_Student_ID__c.')
 
     student_df = student_df.loc[
-        student_df['External_Id__c'].isnull() & 
+        student_df['External_Id__c'].isnull() &
         (student_df['Local_Student_ID__c'].str.len()==8)
     ]
 

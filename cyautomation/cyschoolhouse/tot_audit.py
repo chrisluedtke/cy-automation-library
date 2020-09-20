@@ -9,7 +9,7 @@ from .utils import get_sch_ref_df
 
 
 class ToTAudit:
-    def __init__(self, kind='ToT Audit Errors', folder='Team Documents', 
+    def __init__(self, kind='ToT Audit Errors', folder='Team Documents',
                  filetype='.xlsx', test=False):
         self.kind = kind
         self.sch_ref_df = get_sch_ref_df()
@@ -22,7 +22,7 @@ class ToTAudit:
 
         self.sch_ref_df['tracker_path'] = self.sch_ref_df.apply(
             lambda df: (
-                Path(root_dir) / f"{df['Informal Name']} {folder}" / 
+                Path(root_dir) / f"{df['Informal Name']} {folder}" /
                 f"{YEAR} {self.kind} - {df['Informal Name']}{filetype}"
             ),
             axis=1
@@ -89,7 +89,7 @@ class ToTAudit:
         all_typos = '|'.join(list(typo_map.values()))
 
         df = cysh.get_object_df(
-            'Intervention_Session__c', 
+            'Intervention_Session__c',
             ['Id', 'Comments__c'],
             rename_id=True
         )
@@ -107,7 +107,7 @@ class ToTAudit:
         ISR_df = cysh.get_object_df(
             'Intervention_Session_Result__c',
             ['Amount_of_Time__c', 'IsDeleted', 'Intervention_Session_Date__c',
-             'Related_Student_s_Name__c', 'Intervention_Session__c', 
+             'Related_Student_s_Name__c', 'Intervention_Session__c',
              'CreatedDate']
         )
         IS_df = cysh.get_object_df(
@@ -116,24 +116,24 @@ class ToTAudit:
             rename_id=True, rename_name=True
         )
         section_df = cysh.get_object_df(
-            'Section__c', 
+            'Section__c',
             ['Id', 'School__c', 'Intervention_Primary_Staff__c', 'Program__c'],
             rename_id=True
         )
         school_df = cysh.get_object_df('Account', ['Id', 'Name'])
         school_df = school_df.rename(columns={
-            'Id': 'School__c', 
+            'Id': 'School__c',
             'Name': 'School_Name__c'}
         )
         staff_df = cysh.get_object_df(
-            'Staff__c', 
-            ['Id', 'Name'], 
-            where="Site__c = 'Chicago'", 
+            'Staff__c',
+            ['Id', 'Name'],
+            where="Site__c = 'Chicago'",
             rename_id=True, rename_name=True
         )
         program_df = cysh.get_object_df(
-            'Program__c', 
-            ['Id', 'Name'], 
+            'Program__c',
+            ['Id', 'Name'],
             rename_id=True, rename_name=True
         )
 
@@ -143,10 +143,10 @@ class ToTAudit:
                     .drop(columns=['Section__c'])
                     .merge(school_df, how='left', on='School__c')
                     .drop(columns=['School__c'])
-                    .merge(staff_df, how='left', 
+                    .merge(staff_df, how='left',
                         left_on='Intervention_Primary_Staff__c',
                         right_on='Staff__c')
-                    .drop(columns=['Intervention_Primary_Staff__c', 
+                    .drop(columns=['Intervention_Primary_Staff__c',
                                    'Staff__c'])
                     .merge(program_df, how='left', on='Program__c')
                     .drop(columns=['Program__c']))

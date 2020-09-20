@@ -27,7 +27,7 @@ class Tracker:  # class used only for inheritance
 
         self.sch_ref_df['tracker_path'] = self.sch_ref_df.apply(
             lambda df: (
-                Path(root_dir) / f"{df['Informal Name']} {folder}" / 
+                Path(root_dir) / f"{df['Informal Name']} {folder}" /
                 f"{YEAR} {self.kind} - {df['Informal Name']}{filetype}"
             ),
             axis=1
@@ -37,11 +37,11 @@ class Tracker:  # class used only for inheritance
 
 class ExcelTracker(Tracker):  # class used only for inheritance
     def __init__(self, kind, folder, filetype, test):
-        super().__init__(kind=kind, folder=folder, filetype=filetype, 
+        super().__init__(kind=kind, folder=folder, filetype=filetype,
                          test=test)
 
     def deploy_all(self):
-        """ Distributes tracker for all school teams. Run only at the 
+        """ Distributes tracker for all school teams. Run only at the
         start of the year.
         """
         resp = input(f'This will overwrite {self.kind}s. Are you sure? y/n: ')
@@ -58,7 +58,7 @@ class ExcelTracker(Tracker):  # class used only for inheritance
     def deploy_one(self, school_informal, wb=None, warn=True):
         """ Distributes tracker for just one school team.
 
-        school_informal: school as named in the 'Informal Name' column of the 
+        school_informal: school as named in the 'Informal Name' column of the
                          school reference dataframe
         wb: optional template workbook (loads automatically by default)
         """
@@ -70,7 +70,7 @@ class ExcelTracker(Tracker):  # class used only for inheritance
 
         write_path = self.sch_ref_df.loc[school_informal, 'tracker_path']
         logging.info(f"Deploying {write_path.stem}")
-        
+
         if not wb:
             wb = xw.Book(self.template_path)
 
@@ -93,7 +93,7 @@ class ExcelTracker(Tracker):  # class used only for inheritance
 
         wb_save_and_close(wb, write_path)
 
-    def update_one_acm_validation_sheet(self, school_informal: str, wb=None, 
+    def update_one_acm_validation_sheet(self, school_informal: str, wb=None,
                                         save_and_close=True):
         if not wb:
             wb_path = self.sch_ref_df.loc[school_informal, 'tracker_path']
@@ -108,14 +108,14 @@ class ExcelTracker(Tracker):  # class used only for inheritance
         if save_and_close:
             wb_save_and_close(wb, wb_path)
 
-    def update_one_stdnt_validation_sheet(self, school_informal: str, wb=None, 
+    def update_one_stdnt_validation_sheet(self, school_informal: str, wb=None,
                                           save_and_close=True):
         if not wb:
             wb_path = self.sch_ref_df.loc[school_informal, 'tracker_path']
             wb = xw.Book(wb_path)
 
         school_formal = self.sch_ref_df.loc[school_informal, 'School']
-        
+
         if self.kind == 'Attendance Tracker':
             sections_of_interest = 'Coaching: Attendance'
         else:
@@ -140,7 +140,7 @@ class ExcelTracker(Tracker):  # class used only for inheritance
         dropdown validations.
         """
         app = xw.App()
-        # app.display_alerts = False        
+        # app.display_alerts = False
         for school_informal, row in self.sch_ref_df.iterrows():
             wb_path = row['tracker_path']
             logging.info(f'Updating {wb_path.stem}')
@@ -164,7 +164,7 @@ class ExcelTracker(Tracker):  # class used only for inheritance
     def _get_staff_df(self, school_informal):
         school_formal = self.sch_ref_df.loc[school_informal, 'School']
 
-        roles = ['Corps Member', 'Second Year Corps Member', 
+        roles = ['Corps Member', 'Second Year Corps Member',
                  'Senior Corps Team Leader']
         staff_df = cysh.get_staff_df(schools=[school_formal], roles=roles)
 
@@ -175,25 +175,25 @@ class ExcelTracker(Tracker):  # class used only for inheritance
 
         staff_df.sort_values('First_Name_Staff__c', inplace=True)
 
-        staff_df = staff_df[['Individual__c', 'First_Name_Staff__c', 
+        staff_df = staff_df[['Individual__c', 'First_Name_Staff__c',
                              'Staff__c_Name']]
 
         return staff_df
 
 
 class AttendanceTracker(ExcelTracker):
-    def __init__(self, kind='Attendance Tracker', 
+    def __init__(self, kind='Attendance Tracker',
                  folder='Team Documents', filetype='.xlsx',
                  test=False):
-        super().__init__(kind=kind, folder=folder, filetype=filetype, 
+        super().__init__(kind=kind, folder=folder, filetype=filetype,
                          test=test)
 
 
 class LeadershipTracker(ExcelTracker):
-    def __init__(self, kind='Leadership Tracker', 
+    def __init__(self, kind='Leadership Tracker',
                  folder='Leadership Team Documents', filetype='.xlsx',
                  test=False):
-        super().__init__(kind=kind, folder=folder, filetype=filetype, 
+        super().__init__(kind=kind, folder=folder, filetype=filetype,
                          test=test)
 
 
@@ -201,10 +201,10 @@ class CoachingLog(ExcelTracker):
     def __init__(self, kind='Coaching Log',
                  folder='Leadership Team Documents', filetype='.xlsx',
                  test=False):
-        super().__init__(kind=kind, folder=folder, filetype=filetype, 
+        super().__init__(kind=kind, folder=folder, filetype=filetype,
                          test=test)
 
-    def update_one_acm_validation_sheet(self, school_informal: str, wb=None, 
+    def update_one_acm_validation_sheet(self, school_informal: str, wb=None,
                                         save_and_close=True):
         if not wb:
             wb_path = self.sch_ref_df.loc[school_informal, 'tracker_path']
@@ -253,8 +253,8 @@ class CoachingLog(ExcelTracker):
         )
         # fill columns B:L
         skip_sheets = set(
-            ['Dev Tracker', 'Dev Map', 'ACM Template', 'ACM Validation', 
-             'ACM Rollup', 'Calendar Validation', 'Log Validation'] + 
+            ['Dev Tracker', 'Dev Map', 'ACM Template', 'ACM Validation',
+             'ACM Rollup', 'Calendar Validation', 'Log Validation'] +
             [f'Sheet{_}' for _ in range(1,9)]
         )
         acm_sheets = [x.name for x in wb.sheets if x.name not in skip_sheets]
@@ -271,7 +271,7 @@ class WeeklyServiceTracker(Tracker):
     def __init__(self, kind='Weekly Service Tracker',
                  folder='Team Documents', filetype='.pdf',
                  test=False):
-        super().__init__(kind=kind, folder=folder, filetype=filetype, 
+        super().__init__(kind=kind, folder=folder, filetype=filetype,
                          test=test)
 
     def deploy_all(self):
@@ -296,7 +296,7 @@ class WeeklyServiceTracker(Tracker):
             sections_of_interest = ['Coaching: Attendance',
                                     'SEL Check In Check Out',
                                     'Tutoring: Literacy',
-                                    'Tutoring: Math'], 
+                                    'Tutoring: Math'],
             schools=school_formal
         )
         stu_sec_df = self._process_section_enrollment_table(stu_sec_df)
@@ -329,24 +329,24 @@ class WeeklyServiceTracker(Tracker):
     def _process_section_enrollment_table(df):
         # group by Student_Program__c, then sum ToT
         dosage_df = df.groupby('Student_Program__c')['Dosage_to_Date__c'].sum()
-        df = df.join(dosage_df, how='left', on='Student_Program__c', 
+        df = df.join(dosage_df, how='left', on='Student_Program__c',
                      rsuffix='_r')
 
         # filter out inactive students
         df = df.loc[
-            (df['Active__c']==True) & 
+            (df['Active__c']==True) &
             df['Enrollment_End_Date__c'].isnull()
         ]
 
         # clean program names and set zeros
         df['Program__c_Name'] = df['Program__c_Name'].replace({
-            'Tutoring: Math': 'Math', 
+            'Tutoring: Math': 'Math',
             'Tutoring: Literacy': 'ELA'
         })
         df['Dosage_to_Date__c_r'] = (df['Dosage_to_Date__c_r'].fillna(value=0)
                                                               .astype(int))
 
-        df['Dosage_to_Write'] = (df['Dosage_to_Date__c_r'].astype(str) + 
+        df['Dosage_to_Write'] = (df['Dosage_to_Date__c_r'].astype(str) +
                                  "\r\n" + df['Program__c_Name'])
 
         df = df.sort_values(by=[
@@ -355,7 +355,7 @@ class WeeklyServiceTracker(Tracker):
             'Student_Name__c',
         ])
 
-        df = df[['School_Reference_Id__c', 'Staff__c_Name', 'Program__c_Name', 
+        df = df[['School_Reference_Id__c', 'Staff__c_Name', 'Program__c_Name',
                  'Student_Name__c', 'Dosage_to_Write']]
 
         return df

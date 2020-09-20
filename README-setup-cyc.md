@@ -23,7 +23,7 @@ If you have trouble with these steps, read [Troubleshoot mapped network drives t
     * `https://cityyear.sharepoint.com`
 
 7. Back in the Internet Options window, drag the slider to set security to `Low`. Then click `Apply` and `Okay`.
-    
+
     ![](img/mapdrive_trusted_permissions.png)
 
 8. Back on SharePoint, navigate to a document library. Under `All Documents` choose `View in file Explorer`. Choose to allow all pop-ups if necessary.
