@@ -8,19 +8,16 @@ Requires the following environment variables:
 """
 
 import datetime
+import logging
 import os
 from pathlib import Path
 
-from dotenv import load_dotenv
 import pandas as pd
 import pysftp
 import numpy as np
 
 from . import simple_cysh as cysh
-from .config import set_logger
 
-logger = set_logger(name=Path(__file__).stem)
-load_dotenv()
 
 BASE_DIR = Path('Z:/ChiPrivate/Chicago Data and Evaluation/Thrive/')
 
@@ -165,7 +162,7 @@ def parse_omni_df(all_df):
 
 
 def write_tables_to_cyconnect(cy_export_dir):
-    logger.info(f'Writing Thrive tables to cyconnect at: {cy_export_dir}')
+    logging.info(f'Writing Thrive tables to cyconnect at: {cy_export_dir}')
 
     all_df = load_omni_df()
 
@@ -214,7 +211,7 @@ def convert_table(df, data_file, data_dict):
 
 
 def write_tables_to_thrive_sftp(files_dir):
-    logger.info('Writing Thrive tables to Thrive SFTP')
+    logging.info('Writing Thrive tables to Thrive SFTP')
     srv = get_srv(host=os.environ['THRIVE_HOST'],
                   username=os.environ['THRIVE_USER'],
                   password=os.environ['THRIVE_PASS'])

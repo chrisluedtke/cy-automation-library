@@ -69,15 +69,20 @@ def upload_all(enrollment_date, xlsx_dir=INPUT_PATH,
 
     for school_name, df in sdnt_df.groupby('School'):
         # Write csv
-        path_to_csv = Path(TEMP_PATH) / f"{YEAR} New Students for CYSH - {school_name}.csv"
+        path_to_csv = (
+            Path(TEMP_PATH) 
+            / f"{YEAR} New Students for CYSH - {school_name}.csv"
+        )
 
         (df.drop(columns=["School"])
            .to_csv(path_to_csv, index=False, date_format='%m/%d/%Y'))
 
         # Navigatge to student enrollment page
         setup_id = setup_df.loc[setup_df['Name']==school_name, 'Setup__c'].values[0]
-        driver.get(f'{SF_URL}/apex/CT_core_LoadCsvData_v2?setupId={setup_id}'
-                   '&OldSideBar=true&type=Student')
+        driver.get(
+            f"{SF_URL}/apex/CT_core_LoadCsvData_v2?setupId={setup_id}"
+            "&OldSideBar=true&type=Student"
+        )
         sleep(2)
 
         input_file(driver, path_to_csv)

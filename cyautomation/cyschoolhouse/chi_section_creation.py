@@ -1,12 +1,15 @@
 import os
-
+from pathlib import Path
 import pandas as pd
 
-from .config import get_sch_ref_df
+from .config import YEAR
+from .utils import get_sch_ref_df
 from . import simple_cysh as cysh
 
 
-ACM_DEPLOY_PATH = r'Z:/Impact Analytics Team/SY20/SY20 ACM Deployment.xlsx'
+ACM_DEPLOY_PATH = (
+    Path('Z:') / 'Impact Analytics Team' / f"{YEAR} ACM Deployment.xlsx"
+)
 
 def academic_sections_to_create(start_date, end_date):
     """ Reads ACM deployment spreadsheet to determine which 'Tutoring: Math'
@@ -20,7 +23,7 @@ def academic_sections_to_create(start_date, end_date):
         'ACM ID': 'Staff__c'
     })
 
-    acm_dep_df = acm_dep_df.loc[acm_dep_df['Staff__c_Name'].notna()]
+    acm_dep_df = acm_dep_df.query('Staff__c_Name.notna() & SectionName.notna()')
 
     acm_dep_df['Staff__c_Name'] = acm_dep_df['Staff__c_Name'].str.strip()
     acm_dep_df['SectionName'] = acm_dep_df['SectionName'].str.strip().str.upper()

@@ -4,6 +4,7 @@ Script for the automatic creation of sections in cyschoolhouse. Please ensure
 you have all dependencies, and have set up the input file called "section-creator-input.xlsx"
 in the input files folder.
 """
+import logging
 import os
 from pathlib import Path
 from time import sleep
@@ -14,10 +15,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
 
-from .config import set_logger, SF_URL
+from .config import SF_URL
 from .cyschoolhousesuite import get_driver, open_cyschoolhouse
-
-logger = set_logger(name=Path(__file__).stem)
 
 
 def input_staff_name(driver, staff_name):
@@ -62,7 +61,7 @@ def select_subject(driver, section_name):
         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//input[@value='Proceed']")))
         driver.find_element_by_xpath("//input[@value='Proceed']").click()
     except TimeoutException:
-        logger.warning("May have failed to choose subject")
+        logging.warning("May have failed to choose subject")
 
 
 def save_section(driver):
@@ -99,7 +98,7 @@ def create_single_section(school, acm, sectionname, insch_extlrn, start_date,
                          target_dosage)
     sleep(1)
     save_section(driver)
-    logger.info(f"Created {sectionname} section for {acm}")
+    logging.info(f"Created {sectionname} section for {acm}")
     if nickname:
         update_nickname(driver, nickname)
 
@@ -112,7 +111,7 @@ def create_all_sections(data=pd.DataFrame(), driver=None):
         data = pd.read_excel(os.path.join(os.path.dirname(__file__), 
                              'input_files/section-creator-input.xlsx'))
 
-    logger.info(f'Creating {len(data)} sections')
+    logging.info(f'Creating {len(data)} sections')
     
     data['Start_Date'] = pd.to_datetime(data['Start_Date']).dt.strftime('%m/%d/%Y')
     data['End_Date'] = pd.to_datetime(data['End_Date']).dt.strftime('%m/%d/%Y')
@@ -134,7 +133,7 @@ def create_all_sections(data=pd.DataFrame(), driver=None):
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
-            logger.error(f"Section creation failed for {row['ACM']}, {row['SectionName']}: {e}")
+            logging.error(f"Section creation failed for {row['ACM']}, {row['SectionName']}: {e}")
             driver.get(SF_URL)
             try:
                 WebDriverWait(driver, 3).until(EC.alert_is_present())

@@ -1,3 +1,4 @@
+import logging
 import traceback
 from pathlib import Path
 
@@ -6,16 +7,16 @@ import xlwings as xw
 from PyPDF2 import PdfFileMerger
 
 from . import simple_cysh as cysh
-from .config import TEMP_PATH, TEMPLATES_PATH, YEAR, get_sch_ref_df, set_logger
-
-logger = set_logger(name=Path(__file__).stem)
+from .config import TEMP_PATH, TEMPLATES_PATH, YEAR
+from .utils import get_sch_ref_df
 
 
 class Tracker:  # class used only for inheritance
     def __init__(self, kind, folder, filetype, test=False):
         self.kind = kind
-        self.template_path = str(Path(TEMPLATES_PATH) / 
-                                 f"{YEAR} {self.kind} Template.xlsx")
+        self.template_path = str(
+            TEMPLATES_PATH / f"{YEAR} {self.kind} Template.xlsx"
+        )
         self.sch_ref_df = get_sch_ref_df()
         self.test = test
 
@@ -68,7 +69,7 @@ class ExcelTracker(Tracker):  # class used only for inheritance
                 return None
 
         write_path = self.sch_ref_df.loc[school_informal, 'tracker_path']
-        logger.info(f"Deploying {write_path.stem}")
+        logging.info(f"Deploying {write_path.stem}")
         
         if not wb:
             wb = xw.Book(self.template_path)
@@ -142,7 +143,7 @@ class ExcelTracker(Tracker):  # class used only for inheritance
         # app.display_alerts = False        
         for school_informal, row in self.sch_ref_df.iterrows():
             wb_path = row['tracker_path']
-            logger.info(f'Updating {wb_path.stem}')
+            logging.info(f'Updating {wb_path.stem}')
 
             wb = app.books.open(wb_path)
 
@@ -286,7 +287,7 @@ class WeeklyServiceTracker(Tracker):
     def deploy_one(self, school_informal, wb=None):
         school_formal = self.sch_ref_df.loc[school_informal, 'School']
         write_path = self.sch_ref_df.loc[school_informal, 'tracker_path']
-        logger.info(f"Deploying {write_path.stem}")
+        logging.info(f"Deploying {write_path.stem}")
 
         if not wb:
             wb = xw.Book(self.template_path)
@@ -315,7 +316,7 @@ class WeeklyServiceTracker(Tracker):
             except (KeyboardInterrupt, SystemExit):
                 raise
             except Exception as e:
-                logger.error(f"Failed for {acm_name}: {e}")
+                logging.error(f"Failed for {acm_name}: {e}")
 
         if not write_path.parent.exists() and self.test:
             write_path.parent.mkdir(parents=True)
@@ -371,7 +372,7 @@ class WeeklyServiceTracker(Tracker):
         ].copy()
 
         if len(df_acm_CP) > 12:
-            logger.warning(f"More than 12 Math/ELA students for {acm_name}\n")
+            logging.warning(f"More than 12 Math/ELA students for {acm_name}\n")
 
         sht = wb.sheets['Course Performance']
         sht.range('B4:C15').clear_contents()
@@ -384,7 +385,7 @@ class WeeklyServiceTracker(Tracker):
         ].copy()
 
         if len(df_acm_SEL) > 6:
-            logger.warning(f"More than 6 SEL students for {acm_name}\n")
+            logging.warning(f"More than 6 SEL students for {acm_name}\n")
 
         sht = wb.sheets['SEL']
         sht.range('B5:B10').clear_contents()
@@ -397,7 +398,7 @@ class WeeklyServiceTracker(Tracker):
         ].copy()
 
         if len(df_acm_attendance['Student_Name__c']) > 6:
-            logger.warning(f"More than 6 Attendance students for {acm_name}\n")
+            logging.warning(f"More than 6 Attendance students for {acm_name}\n")
 
         sht = wb.sheets['Attendance CICO']
         sht.range('B4:B6, F4:F6').clear_contents()
@@ -430,7 +431,7 @@ def wb_save_and_close(wb, write_path):
     except (KeyboardInterrupt, SystemExit):
         raise
     except Exception as e:
-        logger.error(f"Failed to save {write_path.name}: {e}")
+        logging.error(f"Failed to save {write_path.name}: {e}")
         traceback.print_exc()
     finally:
         wb.close()

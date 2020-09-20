@@ -1,11 +1,12 @@
+import logging
 from pathlib import Path
 
 import pandas as pd
 
 from . import simple_cysh as cysh
-from .config import TEMP_PATH, YEAR, get_sch_ref_df, set_logger
+from .config import TEMP_PATH, YEAR
+from .utils import get_sch_ref_df
 
-logger = set_logger(name=Path(__file__).stem)
 
 class ToTAudit:
     def __init__(self, kind='ToT Audit Errors', folder='Team Documents', 
@@ -61,7 +62,7 @@ class ToTAudit:
         if df.empty:
             return None
 
-        logger.info(f"Fixing {len(df)} T1, T2, or ELT typos")
+        logging.info(f"Fixing {len(df)} T1, T2, or ELT typos")
 
         for _, row in df.iterrows():
             result = cysh.sf.Intervention_Session__c.update(
@@ -70,8 +71,10 @@ class ToTAudit:
             )
 
             if not isinstance(result, int) or result != 204:
-                logger.warning(f'T1, T2, ELT fix failed for '
-                               f'{row.Intervention_Session__c}: {result}')
+                logging.warning(
+                    f'T1, T2, ELT fix failed for '
+                    f'{row.Intervention_Session__c}: {result}'
+                )
 
     @staticmethod
     def get_T1T2ELT_typo_fixes_df():

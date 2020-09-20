@@ -1,3 +1,4 @@
+import logging
 import functools
 from pathlib import Path
 
@@ -5,11 +6,8 @@ import pandas as pd
 from simple_salesforce import (Salesforce, SalesforceExpiredSession,
                                SalesforceMalformedRequest)
 
-from .config import (set_logger, SF_PASS, SF_TOKN, SF_URL, SF_USER, YEAR,
-                     get_sch_ref_df)
-
-
-logger = set_logger(name=Path(__file__).stem)
+from .config import SF_PASS, SF_TOKN, SF_URL, SF_USER, YEAR
+from .utils import get_sch_ref_df
 
 
 def init_sf_session():
@@ -66,8 +64,6 @@ def get_object_df(object_name, field_list=None, where=None, rename_id=False,
         if field_list:
             df = df[field_list]
     else:
-        error = None
-
         if not field_list:
             field_list = get_object_fields(object_name)
 
@@ -85,10 +81,7 @@ def get_object_df(object_name, field_list=None, where=None, rename_id=False,
             df = pd.DataFrame(query_return['records'])
             df = df[field_list]
         else:
-            error = f'No records found for query: {querystring}'
-
-        if error:
-            logger.error(error)
+            logging.warn(f'No records found for query:\n  {querystring}')
             df = pd.DataFrame(columns=field_list)
 
     if rename_id:

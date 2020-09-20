@@ -7,6 +7,7 @@ and other common tasks we can antipicate needing to do for multiple products.
 
 import getpass
 import io
+import logging
 import pickle
 from pathlib import Path
 from time import sleep, time
@@ -19,9 +20,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from seleniumrequests import Firefox
 
-from .config import LOG_PATH, SF_PASS, SF_URL, SF_USER, TEMP_PATH, set_logger
+from .config import LOG_PATH, SF_PASS, SF_URL, SF_USER, TEMP_PATH
 
-logger = set_logger(name=Path(__file__).stem)
 COOKIES_PATH = Path(__file__).parent / 'cookies.pkl'
 GECKO_PATH = str(Path(__file__).parents[2] / 'geckodriver/geckodriver.exe')
 
