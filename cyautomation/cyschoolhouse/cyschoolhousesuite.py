@@ -87,11 +87,6 @@ def open_cyschoolhouse(driver=None, prompt_user_pass=False):
     driver.get(SF_URL)
     WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.NAME, "username")))
 
-    # if cookies exist, load them and reload salesforce
-    if COOKIES_PATH.exists():
-        for cookie in pickle.load(open(COOKIES_PATH, "rb")):
-            driver.add_cookie(cookie)
-        driver.get(SF_URL)
 
     if driver.find_elements_by_name("username"):
         driver = standard_login(driver, prompt_user_pass)
@@ -100,8 +95,6 @@ def open_cyschoolhouse(driver=None, prompt_user_pass=False):
     WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.ID, "tsidLabel")))
     assert 'salesforce' in driver.current_url
 
-    # On successful login, save cookies. This should reduce 2FA.
-    pickle.dump(driver.get_cookies() , open(COOKIES_PATH, "wb"))
     return driver
 
 
