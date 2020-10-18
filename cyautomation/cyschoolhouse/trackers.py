@@ -88,8 +88,8 @@ class ExcelTracker(Tracker):  # class used only for inheritance
             self.update_one_stdnt_validation_sheet(school_informal, wb,
                                                    save_and_close=False)
 
-        if not write_path.parent.exists() and self.test:
-            write_path.parent.mkdir(parents=True)
+        if self.test:
+            write_path.parent.mkdir(parents=True, exist_ok=True)
 
         wb_save_and_close(wb, write_path)
 
@@ -182,27 +182,34 @@ class ExcelTracker(Tracker):  # class used only for inheritance
 
 
 class AttendanceTracker(ExcelTracker):
-    def __init__(self, kind='Attendance Tracker',
-                 folder='Team Documents', filetype='.xlsx',
-                 test=False):
-        super().__init__(kind=kind, folder=folder, filetype=filetype,
-                         test=test)
+    def __init__(self, test=False):
+        super().__init__(
+            kind='Attendance Tracker',
+            folder='Team Documents',
+            filetype='.xlsx',
+            test=test
+        )
+
 
 
 class LeadershipTracker(ExcelTracker):
-    def __init__(self, kind='Leadership Tracker',
-                 folder='Leadership Team Documents', filetype='.xlsx',
-                 test=False):
-        super().__init__(kind=kind, folder=folder, filetype=filetype,
-                         test=test)
+    def __init__(self, test=False):
+        super().__init__(
+            kind='Leadership Tracker',
+            folder='Leadership Team Documents',
+            filetype='.xlsx',
+            test=test
+        )
 
 
 class CoachingLog(ExcelTracker):
-    def __init__(self, kind='Coaching Log',
-                 folder='Leadership Team Documents', filetype='.xlsx',
-                 test=False):
-        super().__init__(kind=kind, folder=folder, filetype=filetype,
-                         test=test)
+    def __init__(self, test=False):
+        super().__init__(
+            kind='Coaching Log',
+            folder='Leadership Team Documents',
+            filetype='.xlsx',
+            test=test
+        )
 
     def update_one_acm_validation_sheet(self, school_informal: str, wb=None,
                                         save_and_close=True):
@@ -268,11 +275,13 @@ class CoachingLog(ExcelTracker):
 
 
 class WeeklyServiceTracker(Tracker):
-    def __init__(self, kind='Weekly Service Tracker',
-                 folder='Team Documents', filetype='.pdf',
-                 test=False):
-        super().__init__(kind=kind, folder=folder, filetype=filetype,
-                         test=test)
+    def __init__(self, test=False):
+        super().__init__(
+            kind='Weekly Service Tracker',
+            folder='Team Documents',
+            filetype='.pdf',
+            test=test
+        )
 
     def deploy_all(self):
         """ Runs the entire Service Tracker publishing process

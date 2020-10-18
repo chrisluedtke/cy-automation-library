@@ -25,8 +25,8 @@ def academic_sections_to_create(start_date, end_date):
 
     acm_dep_df = acm_dep_df.query('Staff__c_Name.notna() & SectionName.notna()')
 
-    acm_dep_df['Staff__c_Name'] = acm_dep_df['Staff__c_Name'].str.strip()
-    acm_dep_df['SectionName'] = acm_dep_df['SectionName'].str.strip().str.upper()
+    acm_dep_df.loc[:, 'Staff__c_Name'] = acm_dep_df['Staff__c_Name'].str.strip()
+    acm_dep_df.loc[:, 'SectionName'] = acm_dep_df['SectionName'].str.strip().str.upper()
 
     acm_dep_df.loc[acm_dep_df['SectionName'].str.contains('MATH'),
                    'SectionName_MATH'] = 'Tutoring: Math'
@@ -54,13 +54,12 @@ def academic_sections_to_create(start_date, end_date):
 
     # inner-join on staff name to merge in School
     staff_df = cysh.get_staff_df()
-    acm_dep_df = acm_dep_df.merge(staff_df[['Staff__c_Name', 'School']],
-                                  on='Staff__c_Name')
+    acm_dep_df = acm_dep_df.merge(staff_df[['Staff__c', 'School']],
+                                  on='Staff__c')
 
     acm_dep_df = format_df(acm_dep_df, start_date=start_date,
                            end_date=end_date,
-                           in_sch_ext_lrn='In School',
-                           target_dosage=900)
+                           in_sch_ext_lrn='In School')
 
     return acm_dep_df
 
@@ -91,6 +90,31 @@ def non_academic_sections_to_create(start_date, end_date):
     staff_df = staff_df.loc[~staff_df['key'].isin(section_df['key'])]
 
     staff_df = format_df(staff_df, start_date=start_date, end_date=end_date)
+
+    return staff_df
+
+
+def hw_assistance_sections_to_create(start_date, end_date):
+    """
+    """
+    staff_df = cysh.get_staff_df(roles='Senior Corps Team Leader')
+    staff_df.loc[:, 'SectionName'] = 'Homework Assistance'
+
+    # Filter out existing sections
+    staff_df.loc[:, 'key'] = staff_df['Staff__c'] + staff_df['SectionName']
+
+    section_df = cysh.get_section_df('Homework Assistance')
+    section_df.loc[:, 'key'] = (section_df['Intervention_Primary_Staff__c'] +
+                                section_df['Program__c_Name'])
+
+    staff_df = staff_df.loc[~staff_df['key'].isin(section_df['key'])]
+
+    staff_df = format_df(
+        staff_df,
+        start_date=start_date,
+        end_date=end_date,
+        in_sch_ext_lrn='Extended Learning'
+    )
 
     return staff_df
 
@@ -136,8 +160,7 @@ def MIRI_sections_to_create(start_date, end_date):
     return df
 
 
-def format_df(df, start_date, end_date, in_sch_ext_lrn='In School',
-              target_dosage=0):
+def format_df(df, start_date, end_date, in_sch_ext_lrn='In School'):
     assert in_sch_ext_lrn in {'In School', 'Extended Learning', 'Curriculum'}
 
     df = df.rename(columns={
@@ -149,12 +172,11 @@ def format_df(df, start_date, end_date, in_sch_ext_lrn='In School',
     df['In_School_or_Extended_Learning'] = in_sch_ext_lrn
     df['Start_Date'] = start_date
     df['End_Date'] = end_date
-    df['Target_Dosage'] = target_dosage
 
     return df
 
 
-def deactivate_all_sections(section_type):
+def deactivate_all_sections(section_type, exit_date, exit_reason):
     """
     This is necessary due to a bug in section creation. When section creation fails,
     a `50 Acts of Greatness` section is made, as the default section type selection.
@@ -185,7 +207,14 @@ def deactivate_all_sections(section_type):
 
     if user_input in {'yes', 'y'}:
         for section_id in section_df:
-            cysh.sf.Section__c.update(section_id, {'Active__c':False})
+            cysh.sf.Section__c.update(
+                section_id,
+                {
+                    'Active__c': False,
+                    'Section_Exit_Date__c': exit_date,
+                    'Section_Exit_Reason__c': exit_reason,
+                }
+            )
         return True
     else:
         return False

@@ -8,3 +8,5 @@ schedule
 simple_salesforce
 # styleframe
 xlwings
+xlrd
+jupyter

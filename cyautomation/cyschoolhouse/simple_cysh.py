@@ -34,6 +34,11 @@ def check_sf_session(func):
 
 
 @check_sf_session
+def execute_query(query):
+    return sf.query_all(query)
+
+
+@check_sf_session
 def get_object_fields(object_name):
     one_id = sf.query(f"SELECT Id FROM {object_name} LIMIT 1")['records']
     if one_id:
@@ -92,19 +97,23 @@ def get_object_df(object_name, field_list=None, where=None, rename_id=False,
     return df
 
 
-def get_section_df(sections_of_interest):
-    if isinstance(sections_of_interest, str):
-        sections_of_interest = [sections_of_interest]
+def get_section_df(programs):
+    if isinstance(programs, str):
+        programs = [programs]
 
     program_df = get_object_df(
-        'Program__c', ['Id', 'Name'],
-        where=f"Name IN {in_str(sections_of_interest)}",
-        rename_id=True, rename_name=True)
+        'Program__c',
+        ['Id', 'Name'],
+        where=f"Name IN {in_str(programs)}",
+        rename_id=True,
+        rename_name=True
+    )
 
     section_df = get_object_df(
         'Section__c',
-        ['Id', 'Name', 'Intervention_Primary_Staff__c', 'Program__c'],
-        rename_id=True, rename_name=True,
+        ['Id', 'Name', 'Intervention_Primary_Staff__c', 'Program__c', 'Active__c'],
+        rename_id=True,
+        rename_name=True,
         where=f"Program__c IN {in_str(program_df['Program__c'])}",
     )
 
