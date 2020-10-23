@@ -39,6 +39,13 @@ def execute_query(query):
 
 
 @check_sf_session
+def soql_query_as_df(query):
+    result = sf.query_all(query)
+
+    return pd.DataFrame.from_dict(result['records']).drop('attributes', axis=1)
+
+
+@check_sf_session
 def get_object_fields(object_name):
     one_id = sf.query(f"SELECT Id FROM {object_name} LIMIT 1")['records']
     if one_id:

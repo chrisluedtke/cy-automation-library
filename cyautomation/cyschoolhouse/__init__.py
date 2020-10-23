@@ -4,8 +4,8 @@ from .config import USER_SITE
 from .simple_cysh import (get_object_df, get_object_fields, get_section_df,
                           get_staff_df, get_student_df,
                           get_student_section_staff_df, init_sf_session,
-                          object_reference, sf)
-from .section_creation import Section
+                          object_reference, sf, soql_query_as_df)
+from .section_creation import Section, Sections
 from .utils import map_sharepoint_drive, get_sch_ref_df
 
 if USER_SITE.lower() == 'chicago':

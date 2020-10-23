@@ -1,8 +1,5 @@
-# -*- coding: utf-8 -*-
 """Automated Section Creation
-Script for the automatic creation of sections in cyschoolhouse. Please ensure
-you have all dependencies, and have set up the input file called "section-creator-input.xlsx"
-in the input files folder.
+Automated creation of sections in cyschoolhouse.
 """
 import logging
 import os
@@ -17,7 +14,8 @@ from selenium.webdriver.support.ui import Select, WebDriverWait
 
 from .config import SF_URL
 from .cyschoolhousesuite import get_driver, open_cyschoolhouse
-from .simple_cysh import get_object_df, in_str, execute_query
+from .simple_cysh import (execute_query, get_object_df, get_section_df,
+                          get_staff_df, in_str)
 from .utils import validate_date
 
 
@@ -28,10 +26,13 @@ class Section:
         self.corps_member = corps_member
         self.program = program
         self.in_after_sch = in_after_sch
+
+        for date in [start_date, end_date]:
+            validate_date(date)
+
         self.start_date = start_date
-        validate_date(start_date)
         self.end_date = end_date
-        validate_date(end_date)
+
         self.nickname = nickname
 
     def create(self, driver=None):
@@ -138,6 +139,115 @@ class Section:
         driver.find_element_by_id("00N1a000006Syte").send_keys(self.nickname)
         driver.find_element_by_xpath("//input[@value=' Save ']").click()
         sleep(2)
+
+
+class Sections:
+    def __init__(self, program, acm_roles, schools=None):
+        assert program in {
+            'Tutoring: Math',
+            'Tutoring: Literacy',
+            'Coaching: Attendance',
+            'SEL Check In Check Out',
+            'Homework Assistance',
+            'Math Inventory',
+            'Reading Inventory'
+        }
+        self.program = program
+
+        if isinstance(acm_roles, str):
+            acm_roles = [acm_roles]
+
+        self.acm_roles = acm_roles
+
+        if isinstance(schools, str):
+            schools = [schools]
+
+        self.schools = schools
+
+    def create_all(self, start_date, end_date, in_sch_ext_lrn, driver=None):
+        assert in_sch_ext_lrn in {'In School', 'Extended Learning', 'Curriculum'}
+        validate_date(start_date)
+        validate_date(end_date)
+
+        if self.program in {'Math Inventory', 'Reading Inventory'}:
+            # Each tutoring section gets a corresponding MI/RI section
+            miri_map = {
+                'Math Inventory': 'Tutoring: Math',
+                'Reading Inventory': 'Tutoring: Literacy',
+            }
+
+            miri_section_df = get_section_df(programs=self.program)
+            cp_section_df = get_section_df(programs=miri_map[self.program])
+
+            # Filter out tutoring sections that already have associated MIRI sections
+            cp_section_df = cp_section_df.loc[
+                ~cp_section_df['Intervention_Primary_Staff__c'].isin(
+                    miri_section_df['Intervention_Primary_Staff__c']
+                )
+            ]
+
+            # Get staff names and schools
+            staff_df = get_staff_df(roles=self.acm_roles)
+            staff_df = staff_df.loc[
+                staff_df['Staff__c'].isin(
+                    cp_section_df['Intervention_Primary_Staff__c']
+                )
+            ]
+
+        else:
+            staff_df = get_staff_df(roles=self.acm_roles)
+            section_df = get_section_df(programs=self.program)
+
+            # Filter out staff who already have a section
+            staff_df = staff_df.loc[
+                ~staff_df['Staff__c'].isin(
+                    section_df['Intervention_Primary_Staff__c']
+                )
+            ]
+
+        if self.schools:
+            staff_df = staff_df.query("School in @self.schools")
+
+        if len(staff_df) == 0:
+            logging.info(f'No {self.program} sections to make')
+            return
+
+        logging.info(f'Creating {len(staff_df)} {self.program} sections')
+
+        if driver is None:
+            driver = get_driver()
+            open_cyschoolhouse(driver=driver)
+
+        for _, row in staff_df.iterrows():
+            try:
+                section = Section(
+                    school=row['School'],
+                    corps_member=row['Staff__c_Name'],
+                    program=self.program,
+                    in_after_sch=in_sch_ext_lrn,
+                    start_date=start_date,
+                    end_date=end_date,
+                )
+                section.create(driver)
+            except (KeyboardInterrupt, SystemExit):
+                raise
+            except Exception as e:
+                logging.error(f"Section creation failed for {row['ACM']}, {row['SectionName']}: {e}")
+                driver.get(SF_URL)
+                try:
+                    WebDriverWait(driver, 3).until(EC.alert_is_present())
+                    driver.switch_to.alert.accept()
+                    sleep(2)
+                except TimeoutException:
+                    pass
+
+        driver.quit()
+
+    def query_all(self):
+        return get_section_df(programs=self.program)
+
+    def create_from_excel(self, xlsx_path):
+        raise NotImplementedError
 
 
 def create_all_sections(data=pd.DataFrame(), driver=None):
