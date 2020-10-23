@@ -19,7 +19,7 @@ specified format in Excel.
 
 1. Install Python 3.8. If you are new to Python, [see this guide](README-setup-python.md).
 2. [Install GitHub Desktop](https://desktop.github.com/) and clone this repository to your computer.
-3. In your console, create a virtual environment and activate it.
+3. In your console (Command Prompt), navigate to the project folder, create a virtual environment, and activate it.
     ```console
     python -m venv env
     ```
@@ -43,8 +43,7 @@ specified format in Excel.
     * `SF_PASS`: Your password might not be the same as Okta. You can reset your Salesforce password under `My Settings > Personal > Change My Password`. This will not affect your Okta single sign on.
     * `SF_TOKEN`: Under `My Settings > Personal > Personal Information`, choose `Reset Security Token`. This will trigger an email to your inbox containing your security token.
 8. [Install Firefox](https://www.mozilla.org/en-US/firefox/new/). This is the browser used for Salesforce automation.
-9. Geckodriver is a tool used to automate tasks in Firefox. This driver is provided in this project at `./geckodriver/geckodriver.exe`.
-If you don't trust this executable, you can replace it with the version [provided here](https://github.com/mozilla/geckodriver/releases).
+9. Geckodriver is a tool used to automate tasks in Firefox. This driver is provided in this project at `./geckodriver/geckodriver.exe`. If you don't trust this executable, you can replace it with the version [provided here](https://github.com/mozilla/geckodriver/releases).
 
 Some scripts are used to manipulate files in cyconnect (SharePoint). This requires that the user map SharePoint as a network drive. Follow [this visual guide](README-setup-cyc.md) to set it up.
 
@@ -86,7 +85,7 @@ cysh.get_object_df(
 cysh.get_object_df(
     object_name='Staff__c',
     field_list=['Individual__c', 'Name', 'Role__c'],
-    where=f"Site__c = 'Chicago'"
+    where="Site__c = 'Chicago'"
 )
 ```
 
