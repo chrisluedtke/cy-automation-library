@@ -10,3 +10,4 @@ simple_salesforce
 xlwings
 xlrd
 jupyter
+openpyxl
