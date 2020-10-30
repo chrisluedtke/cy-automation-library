@@ -150,7 +150,8 @@ class Sections:
             'SEL Check In Check Out',
             'Homework Assistance',
             'Math Inventory',
-            'Reading Inventory'
+            'Reading Inventory',
+            'DESSA'
         }
         self.program = program
 
