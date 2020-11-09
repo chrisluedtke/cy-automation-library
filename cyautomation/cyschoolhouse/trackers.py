@@ -1,5 +1,4 @@
 import logging
-import traceback
 from pathlib import Path
 
 import pandas as pd
@@ -7,7 +6,7 @@ import xlwings as xw
 from PyPDF2 import PdfFileMerger
 
 from . import simple_cysh as cysh
-from .config import TEMP_PATH, TEMPLATES_PATH, YEAR
+from .config import EXCEL_PROTECTION_PWD, TEMP_PATH, TEMPLATES_PATH, YEAR
 from .utils import get_sch_ref_df
 
 
@@ -102,38 +101,18 @@ class ExcelTracker(Tracker):  # class used only for inheritance
         staff_df = self._get_staff_df(school_informal)
 
         sht = wb.sheets['ACM Validation']
+        sht.api.Unprotect(EXCEL_PROTECTION_PWD)
         sht.clear_contents()
         sht.range('A1').options(index=False, header=False).value = staff_df
+        sht.api.Protect(EXCEL_PROTECTION_PWD)
+        sht.api.Visible = False
 
         if save_and_close:
-            wb_save_and_close(wb, wb_path)
+            wb_save_and_close(wb)
 
     def update_one_stdnt_validation_sheet(self, school_informal: str, wb=None,
                                           save_and_close=True):
-        if not wb:
-            wb_path = self.sch_ref_df.loc[school_informal, 'tracker_path']
-            wb = xw.Book(wb_path)
-
-        school_formal = self.sch_ref_df.loc[school_informal, 'School']
-
-        if self.kind == 'Attendance Tracker':
-            sections_of_interest = 'Coaching: Attendance'
-        else:
-            sections_of_interest = ''
-
-        stdnt_df = cysh.get_student_section_staff_df(
-            sections_of_interest=sections_of_interest,
-            schools=[school_formal]
-        )
-        stdnt_df = stdnt_df.sort_values('Student_Name__c')
-
-        sht = wb.sheets['Student Validation']
-        sht.clear_contents()
-        sht.range('A1').options(index=False, header=False).value = \
-            stdnt_df[['Student_Name__c', 'Student__c']]
-
-        if save_and_close:
-            wb_save_and_close(wb, wb_path)
+        pass
 
     def update_all_acm_stdnt_validation_sheets(self):
         """ Iterates through trackers and updates the ACM and Student names for
@@ -146,6 +125,7 @@ class ExcelTracker(Tracker):  # class used only for inheritance
             logging.info(f'Updating {wb_path.stem}')
 
             wb = app.books.open(wb_path)
+            wb.api.Unprotect(EXCEL_PROTECTION_PWD)
 
             sheet_names = [x.name for x in wb.sheets]
 
@@ -157,7 +137,7 @@ class ExcelTracker(Tracker):  # class used only for inheritance
                 self.update_one_stdnt_validation_sheet(
                     school_informal, wb, save_and_close=False)
 
-            wb_save_and_close(wb, wb_path)
+            wb_save_and_close(wb)
 
         app.kill()
 
@@ -190,6 +170,41 @@ class AttendanceTracker(ExcelTracker):
             test=test
         )
 
+    def update_one_stdnt_validation_sheet(self, school_informal: str, wb=None,
+                                          save_and_close=True):
+        if not wb:
+            wb_path = self.sch_ref_df.loc[school_informal, 'tracker_path']
+            wb = xw.Book(wb_path)
+
+        school_formal = self.sch_ref_df.loc[school_informal, 'School']
+        school_type = self.sch_ref_df.loc[school_informal, 'GradeLevel']
+
+        if school_type == 'High':
+            grade_levels = ['9', '10']
+        else:
+            grade_levels = ['k'] + [str(i) for i in range(1, 9)]
+
+        stdnt_df = cysh.soql_query_as_df(
+            """
+            select Name, Id
+            from Student__c
+            where School_Name__c = '{school_formal}'
+            and Grade__c in {grade_levels}
+            """.format(
+                school_formal=school_formal.replace("'", "\\'"),
+                grade_levels=cysh.in_str(grade_levels)
+            )
+        )
+
+        sht = wb.sheets['Student Validation']
+        sht.api.Unprotect(EXCEL_PROTECTION_PWD)
+        sht.clear_contents()
+        sht.range('A1').options(index=False, header=False).value = stdnt_df
+        sht.api.Protect(EXCEL_PROTECTION_PWD)
+        sht.api.Visible = False
+
+        if save_and_close:
+            wb_save_and_close(wb)
 
 
 class LeadershipTracker(ExcelTracker):
@@ -432,16 +447,15 @@ class WeeklyServiceTracker(Tracker):
         return None
 
 
-def wb_save_and_close(wb, write_path):
+def wb_save_and_close(wb, write_path=None):
     wb.sheets[0].activate()  # sets focus on first sheet of document
 
     try:
         wb.save(write_path)
     except (KeyboardInterrupt, SystemExit):
         raise
-    except Exception as e:
-        logging.error(f"Failed to save {write_path.name}: {e}")
-        traceback.print_exc()
+    except Exception:
+        logging.exception(f"Failed to save {write_path.name}")
     finally:
         wb.close()
 

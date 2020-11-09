@@ -25,6 +25,7 @@ SF_URL = os.environ['SF_URL']
 SF_USER = os.environ['SF_USER']
 SF_PASS = os.environ['SF_PASS']
 SF_TOKN = os.environ['SF_TOKEN']
+EXCEL_PROTECTION_PWD = os.environ['EXCEL_PROTECTION_PWD']
 
 OKTA_USER = os.getenv('OKTA_USER')
 OKTA_PASS = os.getenv('OKTA_PASS')
