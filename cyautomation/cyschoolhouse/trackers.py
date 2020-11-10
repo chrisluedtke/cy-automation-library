@@ -190,6 +190,7 @@ class AttendanceTracker(ExcelTracker):
             from Student__c
             where School_Name__c = '{school_formal}'
             and Grade__c in {grade_levels}
+            order by Name
             """.format(
                 school_formal=school_formal.replace("'", "\\'"),
                 grade_levels=cysh.in_str(grade_levels)
