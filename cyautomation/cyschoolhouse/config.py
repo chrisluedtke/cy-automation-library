@@ -32,8 +32,8 @@ OKTA_PASS = os.getenv('OKTA_PASS')
 
 # configuration
 INPUT_PATH = str(Path(__file__).parent / 'input_files')
-LOG_PATH = str(Path(__file__).parent / 'log')
-TEMP_PATH = str(Path(__file__).parent / 'temp')
+LOG_PATH = str(Path(__file__).parents[2] / 'logs')
+TEMP_PATH = str(Path(__file__).parents[2] / 'test')
 TEMPLATES_PATH = Path(f"Z:/ChiPrivate/Chicago Data and Evaluation/{YEAR}/Templates/")
 SCH_REF_PATH = ('Z:/ChiPrivate/Chicago Data and Evaluation/'
                 f'{YEAR}/{YEAR} School Reference.xlsx')

@@ -238,6 +238,7 @@ class CoachingLog(ExcelTracker):
         sht = wb.sheets['ACM Validation']
         sht.clear_contents()
         sht.range('A1').options(index=False, header=False).value = staff_df
+        sht.api.Visible = False
 
         sht = wb.sheets['ACM Template']
         sht.range('A1,A3:J300').clear_contents()
@@ -261,20 +262,22 @@ class CoachingLog(ExcelTracker):
     @staticmethod
     def _fill_acm_rollup_sheet(wb):
         sht = wb.sheets['ACM Rollup']
-        sht.range('A:N').clear_contents()
+        sht.clear_contents()
 
         # fill headers
-        sht.range('A1').value = [
-            'Individual__c', 'ACM', 'Date', 'Role', 'Coaching Cycle',
-            'Subject', 'Focus', 'Strategy/Skill', 'Notes', 'Action Steps',
-            'Completed?', 'Followed Up'
+        headers = [
+            'Individual__c', 'ACM', 'Date', 'Role', 'Virtual or In Person',
+            'Coaching Cycle', 'Subject', 'Focus', 'Strategy/Skill', 'Notes',
+            'Action Steps', 'Completed?', 'Followed Up'
         ]
+        sht.range('A1').value = headers
+
         # fill column A
         sht.range('A2:A3002').value = (
             "=INDEX('ACM Validation'!$A:$A, "
             "MATCH($B2, 'ACM Validation'!$C:$C, 0))"
         )
-        # fill columns B:L
+        # fill columns B:-1
         skip_sheets = set(
             ['Dev Tracker', 'Dev Map', 'ACM Template', 'ACM Validation',
              'ACM Rollup', 'Calendar Validation', 'Log Validation'] +
@@ -282,13 +285,16 @@ class CoachingLog(ExcelTracker):
         )
         acm_sheets = [x.name for x in wb.sheets if x.name not in skip_sheets]
 
+        last_col = chr(64 + len(headers))
+
         row = 2
         for sheet_name in acm_sheets:
             sheet_name = sheet_name.replace("'", "''")
             sht.range(f'B{row}:B{row + 300}').value = f"='{sheet_name}'!$A$1"
-            sht.range(f'C{row}:L{row + 300}').value = f"='{sheet_name}'!A3"
+            sht.range(f'C{row}:{last_col}{row + 300}').value = f"='{sheet_name}'!A3"
             row += 300
 
+        sht.api.Visible = False
 
 class WeeklyServiceTracker(Tracker):
     def __init__(self, test=False):
